@@ -30,7 +30,7 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
         <button className="lg:hidden text-text-secondary hover:text-text-primary transition-colors" onClick={onMenuClick}>
           <Menu className="w-6 h-6" />
         </button>
-        <div className="relative w-full max-w-2xl hidden sm:block">
+        <div className="relative w-full max-w-md hidden sm:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="text"
@@ -40,7 +40,7 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
         </div>
       </div>
 
-      <div className="flex items-center gap-3 md:gap-6">
+      <div className="flex items-center gap-3 md:gap-4">
         <LanguageSwitcher />
         
         <button 
@@ -50,32 +50,31 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
           {isLightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
         
-        <div className="flex items-center gap-6 sm:pl-2">
-          <button className="text-text-secondary hover:text-text-primary transition-colors relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-0 right-0 w-2 h-2 bg-[#a3e635] rounded-full"></span>
-          </button>
-          <button className="text-text-secondary hover:text-text-primary transition-colors hidden sm:block">
-            <MessageSquare className="w-5 h-5" />
-          </button>
-          
-          {isLoggedIn ? (
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-text-primary hidden md:block">{userName}</span>
-              <div className="w-8 h-8 rounded-full bg-[#a3e635] flex items-center justify-center text-black font-bold text-sm shadow-lg shadow-[#a3e635]/10">
-                {userInitial}
-              </div>
+        <button className="text-text-secondary hover:text-text-primary transition-colors relative">
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-0 right-0 w-2 h-2 bg-[#a3e635] rounded-full"></span>
+        </button>
+
+        <button className="text-text-secondary hover:text-text-primary transition-colors hidden sm:block">
+          <MessageSquare className="w-5 h-5" />
+        </button>
+        
+        {isLoggedIn ? (
+          <div className="flex items-center gap-3 cursor-pointer" onClick={onProfileClick}>
+            <span className="text-sm font-medium text-text-primary hidden md:block">{userName}</span>
+            <div className="w-8 h-8 rounded-full bg-[#a3e635] flex items-center justify-center text-black font-bold text-sm shadow-lg shadow-[#a3e635]/10">
+              {userInitial}
             </div>
-          ) : (
-            <button 
-              onClick={() => openAuthModal()}
-              className="bg-[#a3e635] text-black px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 hover:bg-[#bef264] transition-colors sm:ml-2"
-            >
-              <LogIn className="w-4 h-4" />
-              {t('common.login', 'Đăng nhập')}
-            </button>
-          )}
-        </div>
+          </div>
+        ) : (
+          <button 
+            onClick={() => openAuthModal()}
+            className="bg-[#a3e635] text-black px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 hover:bg-[#bef264] transition-colors"
+          >
+            <LogIn className="w-4 h-4" />
+            {t('common.login', 'Đăng nhập')}
+          </button>
+        )}
       </div>
     </header>
   );
