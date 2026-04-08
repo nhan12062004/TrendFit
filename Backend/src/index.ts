@@ -29,10 +29,10 @@ app.get('/', (req, res) => {
   });
 });
 
-// Route hiển thị danh sách người dùng
-app.get('/api/users', async (req, res) => {
+// Route hiển thị danh sách profile (thay cho Users vì Users không tồn tại)
+app.get('/api/profiles', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('Users').select('*');
+    const { data, error } = await supabase.from('profiles').select('*');
 
     if (error) {
       console.error("Lỗi từ Supabase:", error);
@@ -43,6 +43,11 @@ app.get('/api/users', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Internal Server Error' });
   }
+});
+
+// Route dự kiến cho Gemini AI (Sẽ hoàn thiện khi có API Key)
+app.post('/api/generate-plan', async (req, res) => {
+  res.json({ message: "Route này sẽ dùng Gemini AI để tạo kế hoạch tập luyện!" });
 });
 
 app.listen(PORT, () => {
