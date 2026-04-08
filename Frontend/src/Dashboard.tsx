@@ -4,11 +4,13 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import SurveyForm from './components/SurveyForm';
 import ProfileModal from './components/ProfileModal';
+import ChangePasswordModal from './components/ChangePasswordModal';
 import { useAuth } from './contexts/AuthContext';
 
 export default function Dashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const { isLoggedIn, hasProfile, isCheckingProfile, refreshProfile } = useAuth();
 
   return (
@@ -24,6 +26,12 @@ export default function Dashboard() {
         onClose={() => setIsProfileOpen(false)} 
       />
 
+      {/* Password Change Modal */}
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
+
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div 
@@ -34,7 +42,11 @@ export default function Dashboard() {
       
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <Sidebar onClose={() => setIsMobileMenuOpen(false)} onProfileClick={() => setIsProfileOpen(true)} />
+        <Sidebar 
+          onClose={() => setIsMobileMenuOpen(false)} 
+          onProfileClick={() => setIsProfileOpen(true)} 
+          onPasswordClick={() => setIsPasswordModalOpen(true)}
+        />
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 w-full h-screen overflow-y-auto custom-scrollbar">

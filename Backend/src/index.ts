@@ -3,11 +3,15 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 // Import client Supabase ta vừa tạo
 import { supabase } from './config/supabase';
+import { initTelegramBot } from './telegramBot';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Khởi chạy Telegram Bot
+initTelegramBot();
 
 // Cấu hình CORS linh hoạt cho production
 app.use(cors({

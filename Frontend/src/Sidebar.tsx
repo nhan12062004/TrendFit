@@ -1,8 +1,9 @@
-import { Home, Activity, Utensils, Timer, Target, Trophy, Settings, Dumbbell, Droplet, Flame, Shield, Calculator, TrendingUp, X, Zap, Blocks, Brain, LogIn, LogOut, User } from 'lucide-react';
+import { Home, Activity, Utensils, Timer, Target, Trophy, Settings, Dumbbell, Droplet, Flame, Shield, Calculator, TrendingUp, X, Zap, Blocks, Brain, LogIn, LogOut, User, Send, CheckCircle2, Trash2, Loader2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { useState } from 'react';
 import AuthModal from './components/AuthModal';
+import { supabase } from './lib/supabase';
 
 const menuItems = [
   { icon: Home, label: 'Tổng quan', path: '/overview' },
@@ -17,9 +18,35 @@ const menuItems = [
   { icon: Shield, label: 'Quản trị viên', path: '/admin-panel', adminOnly: true },
 ];
 
-export default function Sidebar({ onClose, onProfileClick }: { onClose?: () => void, onProfileClick?: () => void }) {
-  const { isLoggedIn, signOut, user, openAuthModal, isAdmin, profile } = useAuth();
+export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: { 
+  onClose?: () => void, 
+  onProfileClick?: () => void,
+  onPasswordClick?: () => void 
+}) {
+  const { isLoggedIn, signOut, user, openAuthModal, isAdmin, profile, refreshProfile } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
+
+  const handleUnlinkTelegram = async () => {
+    if (!confirm('Bạn có chắc chắn muốn hủy liên kết với Telegram Bot không?')) return;
+    
+    setIsUnlinking(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ telegram_chat_id: null })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+      await refreshProfile();
+      alert('Đã hủy liên kết Telegram thành công');
+    } catch (err: any) {
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setIsUnlinking(false);
+      setIsSettingsOpen(false);
+    }
+  };
 
   // Lọc menu items dựa trên vai trò (admin/user)
   const filteredMenuItems = menuItems.filter(item => !item.adminOnly || isAdmin);
@@ -102,10 +129,46 @@ export default function Sidebar({ onClose, onProfileClick }: { onClose?: () => v
                   onClick={() => setIsSettingsOpen(false)}
                 />
                 <div className="absolute bottom-full left-0 w-full mb-2 bg-bg-tertiary border border-border-primary rounded-2xl shadow-2xl p-2 z-20 animate-in slide-in-from-bottom-2 duration-200">
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-quaternary rounded-xl transition-colors">
+                  <button 
+                    onClick={() => {
+                      setIsSettingsOpen(false);
+                      onPasswordClick?.();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-quaternary rounded-xl transition-colors"
+                  >
                     <User className="w-4 h-4" />
-                    Cài đặt tài khoản
+                    Đổi mật khẩu
                   </button>
+                  {profile?.telegram_chat_id ? (
+                    <div className="flex items-center justify-between px-3 py-2 mt-1 bg-[#a3e635]/10 rounded-xl group/tg">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="w-4 h-4 text-[#a3e635]" />
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-[#a3e635] font-bold uppercase">Telegram</span>
+                          <span className="text-[9px] text-text-tertiary">Đã kết nối</span>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={handleUnlinkTelegram}
+                        disabled={isUnlinking}
+                        className="p-1.5 hover:bg-red-500/10 text-text-tertiary hover:text-red-500 rounded-lg transition-all opacity-0 group-hover/tg:opacity-100"
+                        title="Hủy liên kết"
+                      >
+                        {isUnlinking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => {
+                        setIsSettingsOpen(false);
+                        window.open(`https://t.me/trendfitforbot?start=${user?.id}`, '_blank');
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:text-[#24A1DE] hover:bg-[#24A1DE]/5 rounded-xl transition-colors mt-1"
+                    >
+                      <Send className="w-4 h-4" />
+                      Kết nối Telegram Bot
+                    </button>
+                  )}
                   <button 
                     onClick={() => signOut()}
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-xl transition-colors mt-1"
