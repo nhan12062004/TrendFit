@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Lock, User, Github, Loader2 } from 'lucide-react';
+import { X, Mail, Lock, User, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -8,9 +9,11 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+  const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +33,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         });
         if (error) throw error;
       } else {
+        if (password !== confirmPassword) {
+          throw new Error(t('auth.password_mismatch', 'Passwords do not match'));
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -130,6 +136,23 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 />
               </div>
             </div>
+            
+            {!isLogin && (
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-text-secondary ml-1">{t('auth.confirm_password', 'Confirm Password')}</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 pl-11 pr-4 text-sm focus:border-[#a3e635] outline-none transition-colors"
+                  />
+                </div>
+              </div>
+            )}
 
             <button
               disabled={loading}
@@ -145,27 +168,30 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </button>
           </form>
 
-          <div className="mt-8 text-center">
-            <p className="text-xs text-text-tertiary underline mb-4">Or continue with</p>
-            <div className="flex gap-4">
-              <button className="flex-1 bg-bg-tertiary hover:bg-bg-quaternary border border-border-primary py-2 rounded-xl flex items-center justify-center gap-2 transition-colors">
-                <Github className="w-4 h-4" />
-                <span className="text-xs font-semibold">GitHub</span>
-              </button>
-              <button className="flex-1 bg-bg-tertiary hover:bg-bg-quaternary border border-border-primary py-2 rounded-xl flex items-center justify-center gap-2 transition-colors">
-                <img src="https://www.google.com/favicon.ico" className="w-3 h-3 grayscale" alt="Google" />
-                <span className="text-xs font-semibold">Google</span>
-              </button>
-            </div>
-          </div>
+
 
           <div className="mt-8 pt-6 border-t border-border-primary text-center">
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-xs font-bold text-text-secondary hover:text-[#a3e635] transition-colors"
-            >
-              {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Log In'}
-            </button>
+            {isLogin ? (
+              <p className="text-xs text-text-tertiary font-medium">
+                {t('auth.no_account', "Don't have an account?")}{' '}
+                <button
+                  onClick={() => setIsLogin(false)}
+                  className="font-bold text-text-secondary hover:text-[#a3e635] transition-colors"
+                >
+                  {t('auth.signup', 'Sign Up')}
+                </button>
+              </p>
+            ) : (
+              <p className="text-xs text-text-tertiary font-medium">
+                {t('auth.has_account', 'Already have an account?')}{' '}
+                <button
+                  onClick={() => setIsLogin(true)}
+                  className="font-bold text-text-secondary hover:text-[#a3e635] transition-colors"
+                >
+                  {t('auth.login', 'Log In')}
+                </button>
+              </p>
+            )}
           </div>
         </div>
       </div>

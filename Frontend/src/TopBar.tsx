@@ -45,7 +45,7 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
         
         <button 
           onClick={() => setIsLightMode(!isLightMode)}
-          className="text-text-secondary hover:text-[#a3e635] transition-colors hidden sm:block"
+          className="text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
         >
           {isLightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>

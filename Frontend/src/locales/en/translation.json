@@ -83,5 +83,13 @@
     "subtitle_highlight": "with absolute precision",
     "subtitle_2": "for you.",
     "section_1_title": "1. Demographics & Occupation"
+  },
+  "auth": {
+    "signup": "Sign Up",
+    "login": "Log In",
+    "no_account": "Don't have an account?",
+    "has_account": "Already have an account?",
+    "confirm_password": "Confirm Password",
+    "password_mismatch": "Passwords do not match"
   }
 }
