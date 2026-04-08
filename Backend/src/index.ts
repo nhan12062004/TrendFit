@@ -9,11 +9,27 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Cấu hình CORS linh hoạt cho production
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://trendfit.vercel.app'] // Thay bằng domain Vercel của bạn khi có
+    : '*', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
 app.use(express.json());
 
-// Đây là Route mới thêm vào để hiển thị danh sách người dùng từ Supabase 
-// (Giả sử bạn đã tạo bảng 'Users' trên trang web điều khiển của Supabase)
+// Root route - Quan trọng để Render kiểm tra tình trạng server
+app.get('/', (req, res) => {
+  res.json({ 
+    status: "ok", 
+    message: "TrendFit API is live!",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Route hiển thị danh sách người dùng
 app.get('/api/users', async (req, res) => {
   try {
     const { data, error } = await supabase.from('Users').select('*');
@@ -30,5 +46,5 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log('Server is running on port ' + PORT);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
