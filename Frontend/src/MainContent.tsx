@@ -196,7 +196,7 @@ export default function MainContent() {
           {[
             { title: t('courses.weightlifting', 'Nâng tạ'), level: t('levels.advanced', 'Nâng cao'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/weight-lifting.jpg' },
             { title: t('courses.muscle_growth', 'Phát triển cơ bắp'), level: t('levels.intermediate', 'Trung cấp'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/muscle-training.jpg' },
-            { title: 'CrossFit', level: t('levels.all', 'Mọi cấp độ'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/cross-fit.jpg' }
+            { title: t('courses.crossfit', 'CrossFit'), level: t('levels.all', 'Mọi cấp độ'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/cross-fit.jpg' }
           ].map((course, i) => (
             <div key={i} className="group relative rounded-2xl overflow-hidden h-48 cursor-pointer">
               <img src={course.img} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />

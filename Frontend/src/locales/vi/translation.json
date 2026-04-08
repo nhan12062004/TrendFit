@@ -91,5 +91,21 @@
     "has_account": "Đã có tài khoản?",
     "confirm_password": "Xác nhận mật khẩu",
     "password_mismatch": "Mật khẩu không khớp"
+  },
+  "courses": {
+    "weightlifting": "Nâng tạ",
+    "muscle_growth": "Phát triển cơ bắp",
+    "crossfit": "CrossFit"
+  },
+  "levels": {
+    "advanced": "Nâng cao",
+    "intermediate": "Trung cấp",
+    "all": "Mọi cấp độ"
+  },
+  "services": {
+    "workout_program": "CHƯƠNG TRÌNH TẬP LUYỆN",
+    "nutrition_plan": "KẾ HOẠCH DINH DƯỠNG",
+    "practice_time": "THỜI GIAN THỰC HÀNH",
+    "diet_program": "CHƯƠNG TRÌNH ĂN KIÊNG"
   }
 }

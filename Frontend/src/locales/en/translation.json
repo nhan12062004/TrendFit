@@ -91,5 +91,21 @@
     "has_account": "Already have an account?",
     "confirm_password": "Confirm Password",
     "password_mismatch": "Passwords do not match"
+  },
+  "courses": {
+    "weightlifting": "Weightlifting",
+    "muscle_growth": "Muscle Growth",
+    "crossfit": "CrossFit"
+  },
+  "levels": {
+    "advanced": "Advanced",
+    "intermediate": "Intermediate",
+    "all": "All Levels"
+  },
+  "services": {
+    "workout_program": "WORKOUT PROGRAM",
+    "nutrition_plan": "NUTRITION PLAN",
+    "practice_time": "PRACTICE TIME",
+    "diet_program": "DIET PROGRAM"
   }
 }
