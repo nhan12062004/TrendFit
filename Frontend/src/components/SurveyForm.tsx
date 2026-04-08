@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  User, 
-  Ruler, 
-  Target, 
-  Activity, 
-  Apple, 
+import {
+  User,
+  Ruler,
+  Target,
+  Activity,
+  Apple,
   Droplet,
   CheckCircle2,
   Loader2,
@@ -35,7 +35,7 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
     gender: 'Nam',
     birthday: '',
     job: '',
-    
+
     // Section 2: Chỉ số cơ thể
     height: '',
     weight: '',
@@ -53,7 +53,7 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
     work_nature: 'Ngồi văn phòng nhiều',
     workout_location: 'Phòng Gym chuyên nghiệp',
     equipment_available: 'Đầy đủ tạ & máy móc',
-    
+
     // Section 4: Chế độ ăn & Sức khỏe
     diet_preference: 'Bình thường',
     daily_water_goal: '2.5',
@@ -66,7 +66,7 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
     injuries: '',
     medications: '',
     smoke_drink: 'Không',
-    
+
     // Section 5: Lối sống & Tâm lý
     sleep_hours: '7',
     sleep_quality: 'Tốt',
@@ -76,8 +76,13 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
     motivation: ''
   });
 
-  const BMI = (formData.height && formData.weight) 
-    ? (parseFloat(formData.weight) / ((parseFloat(formData.height)/100) ** 2)).toFixed(1) 
+  const BMI = (formData.height && formData.weight)
+    ? (() => {
+      const h = parseFloat(formData.height);
+      const w = parseFloat(formData.weight);
+      if (!h || !w || h <= 0 || w <= 0) return '0';
+      return (w / ((h / 100) ** 2)).toFixed(1);
+    })()
     : '0';
 
   React.useEffect(() => {
@@ -247,10 +252,10 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-      
+
       {/* Modal Content */}
       <div className="relative w-full max-w-4xl bg-bg-secondary border border-border-primary rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in duration-300">
-        
+
         {/* Header */}
         <div className="p-4 md:p-5 border-b border-border-primary bg-bg-tertiary/50 backdrop-blur-xl relative">
           <div className="flex items-center gap-2 mb-0.5">
@@ -259,10 +264,10 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
           </div>
           <h2 className="text-xl md:text-2xl font-black text-text-primary">{isOpen ? 'Chỉnh sửa hồ sơ sức khỏe' : 'Xây dựng hồ sơ sức khỏe toàn diện'}</h2>
           <p className="text-[11px] text-text-secondary">Thông tin càng chi tiết, AI sẽ tạo kế hoạch tập luyện và thực đơn <span className="text-[#a3e635] font-bold italic">chính xác tuyệt đối</span> cho bạn.</p>
-          
+
           {/* Close Button (Only for Profile Editing) */}
           {isOpen && onClose && (
-            <button 
+            <button
               onClick={onClose}
               className="absolute right-6 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 rounded-xl transition-all text-text-tertiary hover:text-white group"
             >
@@ -273,7 +278,7 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10 custom-scrollbar">
-          
+
           {/* Section 1: Thông tin cá nhân */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-l-4 border-[#a3e635] pl-4">

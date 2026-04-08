@@ -50,7 +50,7 @@ export default function RightPanel() {
             targetSleep = parseInt(sleepStr) || 7;
           }
         }
-        
+
         const targetWater = lifestyle?.daily_water_goal || 2.5;
 
         if (log) {
@@ -92,10 +92,15 @@ export default function RightPanel() {
           .maybeSingle();
 
         if (workoutRec?.recommendation_content) {
-          const content = typeof workoutRec.recommendation_content === 'string' 
-            ? JSON.parse(workoutRec.recommendation_content) 
-            : workoutRec.recommendation_content;
-          setTodayWorkouts(Array.isArray(content) ? content : []);
+          try {
+            const content = typeof workoutRec.recommendation_content === 'string'
+              ? JSON.parse(workoutRec.recommendation_content)
+              : workoutRec.recommendation_content;
+            setTodayWorkouts(Array.isArray(content) ? content : []);
+          } catch {
+            console.error('Failed to parse workout recommendation content');
+            setTodayWorkouts([]);
+          }
         }
 
         let age = 0;
@@ -113,8 +118,8 @@ export default function RightPanel() {
           water_goal: targetWater,
           sleep_hours: targetSleep
         });
-      } catch (e) { 
-        console.error('Error fetching metrics/workouts:', e); 
+      } catch (e) {
+        console.error('Error fetching metrics/workouts:', e);
       }
     }
     if (isLoggedIn) fetchMetrics();
@@ -161,13 +166,13 @@ export default function RightPanel() {
           <div className="relative w-24 h-24">
             <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" strokeWidth="3" />
-              <path 
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                fill="none" 
-                stroke="#a3e635" 
-                strokeWidth="3" 
-                strokeDasharray={`${progressPercent}, 100`} 
-                className="transition-all duration-[1000ms] ease-out" 
+              <path
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="#a3e635"
+                strokeWidth="3"
+                strokeDasharray={`${progressPercent}, 100`}
+                className="transition-all duration-[1000ms] ease-out"
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -201,12 +206,12 @@ export default function RightPanel() {
           <div className="relative w-16 h-16 mb-2">
             <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" strokeWidth="4" />
-              <path 
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                fill="none" 
-                stroke="#a855f7" 
-                strokeWidth="4" 
-                strokeDasharray={`${(sleepHours.actual / sleepHours.target) * 100}, 100`} 
+              <path
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="#a855f7"
+                strokeWidth="4"
+                strokeDasharray={`${(sleepHours.actual / sleepHours.target) * 100}, 100`}
                 className="transition-all duration-[1000ms] ease-out"
               />
             </svg>
@@ -228,12 +233,12 @@ export default function RightPanel() {
           <div className="relative w-16 h-16 mb-2">
             <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" strokeWidth="4" />
-              <path 
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                fill="none" 
-                stroke="#60a5fa" 
-                strokeWidth="4" 
-                strokeDasharray={`${(actualWater / metrics.water_goal) * 100}, 100`} 
+              <path
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="#60a5fa"
+                strokeWidth="4"
+                strokeDasharray={`${(actualWater / metrics.water_goal) * 100}, 100`}
                 className="transition-all duration-[1000ms] ease-out"
               />
             </svg>
@@ -258,8 +263,8 @@ export default function RightPanel() {
                   <h4 className="text-sm font-bold text-text-primary">{plan.title}</h4>
                   <p className="text-[10px] text-text-tertiary tracking-tight line-clamp-1">{plan.desc}</p>
                   <div className="mt-2 h-1 w-full bg-bg-tertiary rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-[#a3e635]/30 group-hover:bg-[#a3e635] transition-all duration-[1500ms] ease-out" 
+                    <div
+                      className="h-full bg-[#a3e635]/30 group-hover:bg-[#a3e635] transition-all duration-[1500ms] ease-out"
                       style={{ width: `${plan.progress}%` }}
                     ></div>
                   </div>
