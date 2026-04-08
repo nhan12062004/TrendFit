@@ -153,10 +153,11 @@ export default function ProfileModal({ onComplete, isOpen, onClose }: ProfileMod
     setLoading(true);
 
     try {
-      // 1. Cập nhật Profile (Thông tin cơ bản)
+      // 1. Cập nhật hoặc Tạo mới Profile (Thông tin cơ bản)
       const profilePromise = supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: user.id,
           full_name: formData.full_name,
           email: formData.email,
           phone: formData.phone,
@@ -164,8 +165,7 @@ export default function ProfileModal({ onComplete, isOpen, onClose }: ProfileMod
           birthday: formData.birthday || null,
           job: formData.job,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+        });
 
       // 2. Lưu số đo cơ thể đầy đủ
       const bodyMetricsPromise = supabase
@@ -219,9 +219,12 @@ export default function ProfileModal({ onComplete, isOpen, onClose }: ProfileMod
         });
 
 
-      // Thực thi tất cả các lệnh lưu trữ đồng thời
+      // 1. ĐẢM BẢO Profile tồn tại trước (Sequential to avoid FK errors)
+      const { error: pError } = await profilePromise;
+      if (pError) throw pError;
+      
+      // 2. Chạy các lệnh còn lại (Concurrent ok now)
       const results = await Promise.all([
-        profilePromise,
         bodyMetricsPromise,
         lifestylePromise,
         healthPromise

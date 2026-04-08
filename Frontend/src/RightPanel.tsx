@@ -30,10 +30,10 @@ export default function RightPanel() {
     async function fetchMetrics() {
       if (!user) return;
       try {
-        const { data: profile } = await supabase.from('profiles').select('birthday, gender').eq('id', user.id).single();
-        const { data: body } = await supabase.from('body_metrics').select('weight, height').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).single();
-        const { data: lifestyle } = await supabase.from('lifestyle_settings').select('daily_water_goal, activity_level, fitness_goal').eq('user_id', user.id).single();
-        const { data: health } = await supabase.from('health_conditions').select('sleep_hours').eq('user_id', user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('birthday, gender').eq('id', user.id).maybeSingle();
+        const { data: body } = await supabase.from('body_metrics').select('weight, height').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        const { data: lifestyle } = await supabase.from('lifestyle_settings').select('daily_water_goal, activity_level, fitness_goal').eq('user_id', user.id).maybeSingle();
+        const { data: health } = await supabase.from('health_conditions').select('sleep_hours').eq('user_id', user.id).maybeSingle();
 
         const today = new Date().toISOString().split('T')[0];
         const { data: log } = await supabase
