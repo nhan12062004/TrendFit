@@ -1,50 +1,65 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  X, Save, User, Scale, Activity, Heart, Calendar, Target, Clock, Droplet, Moon, 
-  Search, Apple, Stethoscope, Zap, Sparkles, Briefcase, GraduationCap, Dumbbell, MapPin,
-  Smile, Flame
+import React, { useState } from 'react';
+import {
+  User,
+  Ruler,
+  Target,
+  Activity,
+  Apple,
+  Droplet,
+  CheckCircle2,
+  Loader2,
+  Sparkles,
+  Zap,
+  Clock,
+  Heart,
+  Stethoscope,
+  X,
+  PencilLine
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProfileModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  onComplete?: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-  const { user } = useAuth();
+export default function ProfileModal({ onComplete, isOpen, onClose }: ProfileModalProps) {
+  const { user, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     // Section 1: Thông tin cá nhân
-    full_name: '',
-    birthday: '',
+    full_name: user?.user_metadata?.full_name || '',
+    email: user?.email || '',
+    phone: '',
     gender: 'Nam',
+    birthday: '',
     job: '',
-    
+
     // Section 2: Chỉ số cơ thể
-    height: 0,
-    weight: 0,
-    target_weight: 0,
-    body_fat: 0,
-    chest: 0,
-    waist: 0,
-    hips: 0,
-    
-    // Section 3: Lifestyle
+    height: '',
+    weight: '',
+    target_weight: '',
+    body_fat: '',
+    chest: '',
+    waist: '',
+    hips: '',
+    // BMI sẽ được tính tự động, không cần trong state input
     activity_level: 'Vừa phải (Tập luyện 3-5 ngày/tuần)',
     fitness_goal: 'Giảm cân',
     workout_time: 'Sáng sớm',
-    workout_duration: 45,
+    workout_duration: '45',
     experience_level: 'Người mới',
     work_nature: 'Ngồi văn phòng nhiều',
     workout_location: 'Phòng Gym chuyên nghiệp',
     equipment_available: 'Đầy đủ tạ & máy móc',
-    
-    // Section 4: Dinh dưỡng & Y tế
+
+    // Section 4: Chế độ ăn & Sức khỏe
     diet_preference: 'Bình thường',
-    daily_water_goal: 2.5,
-    meals_per_day: 3,
+    daily_water_goal: '2.5',
+    meals_per_day: '3',
     cooking_ability: 'Tự nấu 100%',
     budget_level: 'Trung bình',
     current_diet: '',
@@ -53,19 +68,28 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     injuries: '',
     medications: '',
     smoke_drink: 'Không',
-    
-    // Section 5: Lối sống
-    sleep_hours: 7,
+
+    // Section 5: Lối sống & Tâm lý
+    sleep_hours: '7',
     sleep_quality: 'Tốt',
+    mood: 'Bình thường',
     stress_level: 'Thấp',
     expectations: '',
     motivation: ''
   });
 
-  useEffect(() => {
-    async function loadFullProfile() {
+  const BMI = (formData.height && formData.weight)
+    ? (() => {
+      const h = parseFloat(formData.height);
+      const w = parseFloat(formData.weight);
+      if (!h || !w || h <= 0 || w <= 0) return '0';
+      return (w / ((h / 100) ** 2)).toFixed(1);
+    })()
+    : '0';
+
+  React.useEffect(() => {
+    async function loadCurrentData() {
       if (!user || !isOpen) return;
-      setLoading(true);
       try {
         const [p, b, l, h] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', user.id).single(),
@@ -77,17 +101,18 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         if (p.data) {
           setFormData(prev => ({
             ...prev,
-            full_name: p.data.full_name || '',
-            birthday: p.data.birthday || '',
+            full_name: p.data.full_name || prev.full_name,
+            phone: p.data.phone || '',
             gender: p.data.gender || 'Nam',
+            birthday: p.data.birthday || '',
             job: p.data.job || '',
-            height: b.data?.height || 0,
-            weight: b.data?.weight || 0,
-            target_weight: b.data?.target_weight || 0,
-            body_fat: b.data?.body_fat || 0,
-            chest: b.data?.chest || 0,
-            waist: b.data?.waist || 0,
-            hips: b.data?.hips || 0,
+            height: b.data?.height?.toString() || prev.height,
+            weight: b.data?.weight?.toString() || prev.weight,
+            target_weight: b.data?.target_weight?.toString() || prev.target_weight,
+            body_fat: b.data?.body_fat?.toString() || prev.body_fat,
+            chest: b.data?.chest?.toString() || prev.chest,
+            waist: b.data?.waist?.toString() || prev.waist,
+            hips: b.data?.hips?.toString() || prev.hips,
             activity_level: l.data?.activity_level || prev.activity_level,
             fitness_goal: l.data?.fitness_goal || prev.fitness_goal,
             diet_preference: l.data?.diet_preference || prev.diet_preference,
@@ -96,53 +121,70 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             current_diet: l.data?.current_diet || '',
             workout_location: l.data?.workout_location || prev.workout_location,
             workout_time: l.data?.workout_time || prev.workout_time,
-            workout_duration: l.data?.workout_duration || prev.workout_duration,
+            workout_duration: l.data?.workout_duration?.toString() || prev.workout_duration,
             equipment_available: l.data?.equipment_available || prev.equipment_available,
             experience_level: l.data?.experience_level || prev.experience_level,
-            daily_water_goal: l.data?.daily_water_goal || prev.daily_water_goal,
+            daily_water_goal: l.data?.daily_water_goal?.toString() || prev.daily_water_goal,
             health_condition: h.data?.health_condition || '',
             injuries: h.data?.injuries || '',
             medications: h.data?.medications || '',
             smoke_drink: h.data?.smoke_drink || 'Không',
             stress_level: h.data?.stress_level || 'Thấp',
-            sleep_hours: h.data?.sleep_hours || 7,
+            sleep_hours: h.data?.sleep_hours?.toString() || prev.sleep_hours,
             expectations: l.data?.expectations || '',
             motivation: l.data?.motivation || ''
           }));
         }
       } catch (e) {
-        console.error('Error loading full profile:', e);
-      } finally {
-        setLoading(false);
+        console.error('Error preload:', e);
       }
     }
-    loadFullProfile();
+    loadCurrentData();
   }, [user, isOpen]);
 
-  const handleSave = async () => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!user) return;
     setLoading(true);
+
     try {
-      await Promise.all([
-        supabase.from('profiles').update({
+      // 1. Cập nhật Profile (Thông tin cơ bản)
+      const profilePromise = supabase
+        .from('profiles')
+        .update({
           full_name: formData.full_name,
+          email: formData.email,
+          phone: formData.phone,
           gender: formData.gender,
-          birthday: formData.birthday,
+          birthday: formData.birthday || null,
           job: formData.job,
           updated_at: new Date().toISOString()
-        }).eq('id', user.id),
-        
-        supabase.from('body_metrics').insert({
-          user_id: user.id,
-          height: formData.height,
-          weight: formData.weight,
-          body_fat: formData.body_fat,
-          chest: formData.chest,
-          waist: formData.waist,
-          hips: formData.hips
-        }),
+        })
+        .eq('id', user.id);
 
-        supabase.from('lifestyle_settings').upsert({
+      // 2. Lưu số đo cơ thể đầy đủ
+      const bodyMetricsPromise = supabase
+        .from('body_metrics')
+        .insert({
+          user_id: user.id,
+          height: parseFloat(formData.height) || 0,
+          weight: parseFloat(formData.weight) || 0,
+          target_weight: parseFloat(formData.target_weight) || 0,
+          body_fat: formData.body_fat ? parseFloat(formData.body_fat) : null,
+          chest: formData.chest ? parseFloat(formData.chest) : null,
+          waist: formData.waist ? parseFloat(formData.waist) : null,
+          hips: formData.hips ? parseFloat(formData.hips) : null
+        });
+
+      // 3. Cập nhật Lối sống & Thói quen toàn diện
+      const lifestylePromise = supabase
+        .from('lifestyle_settings')
+        .upsert({
           user_id: user.id,
           activity_level: formData.activity_level,
           fitness_goal: formData.fitness_goal,
@@ -152,283 +194,455 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           current_diet: formData.current_diet,
           workout_location: formData.workout_location,
           workout_time: formData.workout_time,
-          workout_duration: formData.workout_duration,
+          workout_duration: parseInt(formData.workout_duration) || 0,
           equipment_available: formData.equipment_available,
           experience_level: formData.experience_level,
-          daily_water_goal: formData.daily_water_goal,
+          daily_water_goal: parseFloat(formData.daily_water_goal) || 2.0,
           motivation: formData.motivation,
           expectations: formData.expectations,
           updated_at: new Date().toISOString()
-        }),
+        });
 
-        supabase.from('health_conditions').upsert({
+      // 4. Cập nhật Tình trạng Y tế chi tiết
+      const healthPromise = supabase
+        .from('health_conditions')
+        .upsert({
           user_id: user.id,
           health_condition: formData.health_condition,
           injuries: formData.injuries,
           medications: formData.medications,
           smoke_drink: formData.smoke_drink,
           stress_level: formData.stress_level,
-          sleep_hours: formData.sleep_hours,
+          sleep_quality: formData.sleep_quality,
+          sleep_hours: parseFloat(formData.sleep_hours) || 7,
           updated_at: new Date().toISOString()
-        })
+        });
+
+
+      // Thực thi tất cả các lệnh lưu trữ đồng thời
+      const results = await Promise.all([
+        profilePromise,
+        bodyMetricsPromise,
+        lifestylePromise,
+        healthPromise
       ]);
-      alert('Hồ sơ sức khỏe đã được cập nhật!');
-      onClose();
-      window.location.reload();
-    } catch (e) {
-      alert('Lỗi khi lưu dữ liệu!');
-      console.error(e);
+
+      // In chi tiết lỗi (nếu có) ra console để debug
+      results.forEach((res, index) => {
+        if (res.error) {
+          console.error(`Error in promise ${index}:`, res.error);
+        }
+      });
+
+      // Kiểm tra lỗi từ bất kỳ bảng nào
+      const firstError = results.find(res => res.error)?.error;
+      if (firstError) {
+        throw firstError;
+      }
+
+      await refreshProfile();
+      if (onComplete) onComplete();
+      if (onClose) onClose();
+    } catch (err: any) {
+      console.error('Error saving multi-table profile:', err);
+      alert(`Lỗi hệ thống: ${err?.message || err?.details || 'Thông tin không hợp lệ'}. Vui lòng check Console (F12)`);
     } finally {
       setLoading(false);
     }
   };
 
-  const bmi = (formData.height > 0 && formData.weight > 0) 
-    ? (formData.weight / ((formData.height/100) ** 2)).toFixed(1) 
-    : '0';
 
-  if (!isOpen) return null;
+  if (!isOpen && !onComplete) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onClose} />
-      
-      <div className="relative bg-bg-secondary w-full max-w-6xl max-h-[95vh] overflow-hidden rounded-[3rem] border border-border-primary shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
-        
-        {/* Header - Kiểu Dashboard Thuần AI */}
-        <div className="p-8 border-b border-border-primary bg-bg-tertiary/40 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-[2rem] bg-[#a3e635]/10 flex items-center justify-center text-[#a3e635] shadow-inner">
-              <Sparkles className="w-8 h-8" />
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
+
+      {/* Modal Content */}
+      <div className="relative w-full max-w-4xl bg-bg-secondary border border-border-primary rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in duration-300">
+
+        {/* Header */}
+        <div className="p-4 md:p-5 border-b border-border-primary bg-bg-tertiary/50 backdrop-blur-xl relative">
+          <div className="flex items-center gap-2 mb-0.5">
+            <Sparkles className="w-4 h-4 text-[#a3e635] animate-pulse" />
+            <span className="text-[9px] font-bold text-[#a3e635] uppercase tracking-[3px]">Hệ thống phân tích AI</span>
+          </div>
+          <h2 className="text-xl md:text-2xl font-black text-text-primary text-white">
+            {isEditing ? 'Chỉnh sửa hồ sơ sức khỏe' : 'Hồ sơ sức khỏe của bạn'}
+          </h2>
+          <p className="text-[11px] text-text-secondary">
+            {isEditing 
+              ? 'Thông tin càng chi tiết, AI sẽ tạo kế hoạch tập luyện và thực đơn chính xác tuyệt đối cho bạn.'
+              : 'Dưới đây là tóm tắt các chỉ số hiện tại được AI đồng bộ từ dữ liệu của bạn.'}
+          </p>
+
+          {/* Close & Edit Buttons */}
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2 text-white hover:text-[#a3e635] transition-colors group pr-2"
+              >
+                <PencilLine className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase hidden sm:block">Chỉnh sửa</span>
+              </button>
+            )}
+            {isOpen && onClose && (
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-white/10 rounded-xl transition-all text-text-tertiary hover:text-white group"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* View / Edit Content */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10 custom-scrollbar">
+          <fieldset disabled={!isEditing} className="space-y-10 disabled:opacity-90">
+            {/* Section 1: Thông tin cá nhân */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-3 border-l-4 border-[#a3e635] pl-4">
+                <User className="w-5 h-5 text-[#a3e635]" />
+                <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight text-white">1. Nhân khẩu học & Nghề nghiệp</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Họ và tên</label>
+                  <input required name="full_name" value={formData.full_name} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent" placeholder="Nguyễn Văn A" />
+                </div>
+                <div className="space-y-1.5 opacity-70">
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Email (Tự điền)</label>
+                  <input readOnly type="email" name="email" value={formData.email} className="w-full bg-bg-tertiary/50 border border-border-primary rounded-xl py-2 px-3 text-sm outline-none cursor-not-allowed text-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Số điện thoại</label>
+                  <input required type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent" placeholder="090 123 4567" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Ngày sinh</label>
+                  <input required type="date" name="birthday" value={formData.birthday} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Giới tính</label>
+                  <select name="gender" value={formData.gender} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent disabled:appearance-none">
+                    <option>Nam</option>
+                    <option>Nữ</option>
+                    <option>Khác</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Công việc hiện tại</label>
+                  <input name="job" value={formData.job} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent" placeholder="Vd: Văn phòng, Tự do..." />
+                </div>
+              </div>
+            </section>
+
+          {/* Section 2: Chỉ số cơ thể nâng cao */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 border-l-4 border-blue-400 pl-4">
+              <Ruler className="w-5 h-5 text-blue-400" />
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight text-white">2. Chỉ số cơ thể & Thành phần mỡ</h3>
             </div>
-            <div>
-              <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Hồ sơ sức khỏe toàn diện</h2>
-              <p className="text-sm text-text-tertiary font-bold uppercase tracking-[0.2em] flex items-center gap-2">
-                Dữ liệu nền tảng cho <span className="text-[#a3e635]">TrendFit AI Engine</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Chiều cao (cm)</label>
+                <input required type="number" name="height" value={formData.height} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white" placeholder="175" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Cân nặng (kg)</label>
+                <input required type="number" name="weight" value={formData.weight} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white" placeholder="70" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Cân nặng đích (kg)</label>
+                <input required type="number" name="target_weight" value={formData.target_weight} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white" placeholder="65" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">% Mỡ cơ thể (nếu biết)</label>
+                <input type="number" name="body_fat" value={formData.body_fat} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white" placeholder="15" />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-4 bg-bg-tertiary/30 p-4 rounded-2xl border border-border-primary/50">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">Vòng ngực</label>
+                <input type="number" name="chest" value={formData.chest} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400 text-white" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">Vòng bụng</label>
+                <input type="number" name="waist" value={formData.waist} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400 text-white" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">Vòng mông</label>
+                <input type="number" name="hips" value={formData.hips} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400 text-white" />
+              </div>
+              <div className="space-y-1 flex flex-col justify-center items-center">
+                <label className="text-[9px] font-bold text-[#a3e635] uppercase text-center block">Chỉ số BMI</label>
+                <div className="w-full bg-[#a3e635]/10 border border-[#a3e635]/30 rounded-lg py-1.5 px-2 text-center text-xs font-bold text-[#a3e635]">
+                  {BMI}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 3: Dinh dưỡng */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 border-l-4 border-emerald-500 pl-4">
+              <Apple className="w-5 h-5 text-emerald-500" />
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight text-white">3. Chế độ dinh dưỡng & Ăn uống</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Chế độ ăn & Sở thích</label>
+                <select name="diet_preference" value={formData.diet_preference} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500 text-white">
+                  <option>Bình thường</option>
+                  <option>Ăn chay (Có thể ăn chay)</option>
+                  <option>Ăn nhiều đạm (High Protein)</option>
+                  <option>Keto / Low Carb</option>
+                  <option>Eat Clean</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Khả năng nấu nướng</label>
+                <select name="cooking_ability" value={formData.cooking_ability} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500 text-white">
+                  <option>Tự nấu 100%</option>
+                  <option>Ăn ngoài quán</option>
+                  <option>Tự nấu tối, ăn ngoài trưa</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Số bữa ăn/ngày</label>
+                <select name="meals_per_day" value={formData.meals_per_day} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500 text-white">
+                  <option value="2">2 bữa</option>
+                  <option value="3">3 bữa chính</option>
+                  <option value="4">3 bữa chính + 1 bữa phụ</option>
+                  <option value="5">5 bữa nhỏ/ngày</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Mục tiêu uống nước (L/ngày)</label>
+                <div className="relative">
+                  <Droplet className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-blue-400" />
+                  <input type="number" step="0.1" name="daily_water_goal" value={formData.daily_water_goal} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-500 text-white" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Ngân sách ăn uống</label>
+                <select name="budget_level" value={formData.budget_level} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500 text-white">
+                  <option>Sinh viên (Rẻ, Tiết kiệm)</option>
+                  <option>Trung bình (Cơ bản)</option>
+                  <option>Cao cấp (Đủ loại thực phẩm)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Thực đơn hiện tại (Vd: Hay ăn cơm tiệm...)</label>
+                <input name="current_diet" value={formData.current_diet} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500 text-white" placeholder="Vd: Sáng bún, trưa cơm tiệm, tối cơm nhà..." />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Dị ứng / Kiêng kỵ (Blacklist)</label>
+                <input name="allergies" value={formData.allergies} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500 text-white" placeholder="Vd: Hải sản, Sữa bò (Lactose), Đậu phộng..." />
+              </div>
+            </div>
+          </section>
+
+          {/* Section 4: Tình trạng y tế */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 border-l-4 border-red-500 pl-4">
+              <Stethoscope className="w-5 h-5 text-red-500" />
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight text-white">4. Tình trạng sức khỏe & Y tế</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Khói thuốc & Rượu bia</label>
+                <select name="smoke_drink" value={formData.smoke_drink} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-red-500 text-white">
+                  <option>Không bao giờ</option>
+                  <option>Thỉnh thoảng</option>
+                  <option>Thường xuyên</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Các loại thuốc đang sử dụng</label>
+                <input name="medications" value={formData.medications} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-red-500 text-white" placeholder="Vd: Thuốc huyết áp, tiểu đường, hỗ trợ tim mạch..." />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Bệnh nền (Tim mạch, huyết áp, tiểu đường...)</label>
+                <textarea name="health_condition" value={formData.health_condition} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 h-24 text-sm outline-none focus:border-red-500 text-white" placeholder="Vd: Cao huyết áp, Tiểu đường tuýp 2, Hen suyễn, Tim mạch..." />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Chấn thương cũ (Xương khớp, lưng, gối...)</label>
+                <textarea name="injuries" value={formData.injuries} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 h-24 text-sm outline-none focus:border-red-500 text-white" placeholder="Vd: Thoát vị đĩa đệm lưng dưới, Đau đầu gối trái, Chấn thương cổ tay..." />
+              </div>
+            </div>
+
+            <div className="bg-red-500/5 border border-red-500/20 p-3 rounded-xl">
+              <p className="text-[10px] text-red-400 font-medium leading-relaxed italic">
+                * Lưu ý: Nếu bạn có bệnh nền nặng, hãy tham khảo ý kiến bác sĩ trước khi bắt đầu bất kỳ lộ trình tập luyện cường độ cao nào. AI sẽ dựa trên thông tin này để giới hạn nhịp tim và áp lực lên khớp.
               </p>
             </div>
+          </section>
+
+          {/* Section 5: Kinh nghiệm & Thói quen vận động */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 border-l-4 border-orange-500 pl-4">
+              <Zap className="w-5 h-5 text-orange-500" />
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight text-white">5. Kinh nghiệm & Thói quen vận động</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Tính chất công việc</label>
+                <select name="work_nature" value={formData.work_nature} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500 text-white">
+                  <option>Ngồi văn phòng nhiều (Sedentary)</option>
+                  <option>Di chuyển nhẹ nhàng</option>
+                  <option>Vận động liên tục (Lao động tay chân)</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Địa điểm tập luyện</label>
+                <select name="workout_location" value={formData.workout_location} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500 text-white">
+                  <option>Phòng Gym chuyên nghiệp</option>
+                  <option>Tập tại nhà (Home Workout)</option>
+                  <option>Công viên / Ngoài trời</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Kinh nghiệm tập</label>
+                <select name="experience_level" value={formData.experience_level} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500 text-white">
+                  <option>Người mới hoàn toàn</option>
+                  <option>Dưới 6 tháng</option>
+                  <option>6 tháng - 2 năm</option>
+                  <option>Trên 2 năm</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Tần suất tập hiện tại</label>
+                <select name="activity_level" value={formData.activity_level} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500 text-white">
+                  <option>Chưa tập luyện</option>
+                  <option>1-2 buổi/tuần</option>
+                  <option>3-4 buổi/tuần</option>
+                  <option>Trên 5 buổi/tuần</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Thời lượng/buổi (phút)</label>
+                <input type="number" name="workout_duration" value={formData.workout_duration} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500 text-white" placeholder="45" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Dụng cụ sẵn có</label>
+                <select name="equipment_available" value={formData.equipment_available} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500 text-white">
+                  <option>Đầy đủ tạ & máy móc (Gym)</option>
+                  <option>Tạ đơn (Dumbbells) & Thảm</option>
+                  <option>Dây kháng lực (Resistance Bands)</option>
+                  <option>Không dụng cụ (Calisthenics)</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Số giờ ngủ/ngày</label>
+                <select name="sleep_hours" value={formData.sleep_hours} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500 text-white">
+                  <option value="4">Dưới 5 giờ</option>
+                  <option value="6">5-6 giờ</option>
+                  <option value="7">7-8 giờ</option>
+                  <option value="9">Trên 8 giờ</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Chất lượng giấc ngủ</label>
+                <select name="sleep_quality" value={formData.sleep_quality} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500 text-white">
+                  <option>Rất tốt (Sâu giấc, tỉnh táo)</option>
+                  <option>Bình thường (Hay thức giấc)</option>
+                  <option>Kém (Khó ngủ, mệt mỏi)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="bg-orange-500/5 border border-orange-500/20 p-3 rounded-xl flex gap-3 items-center">
+              <Clock className="w-4 h-4 text-orange-500 shrink-0" />
+              <p className="text-[9px] text-text-tertiary uppercase tracking-wider font-bold leading-relaxed text-white">
+                Giấc ngủ ảnh hưởng <span className="text-orange-500 italic">80% quá trình phục hồi</span>. AI sẽ cân đối bài tập dựa trên khả năng hồi phục của bạn.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 6: Tâm lý & Động lực AI */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 border-l-4 border-purple-500 pl-4">
+              <Heart className="w-5 h-5 text-purple-500" />
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight text-white">6. Tâm lý & Động lực AI</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Mức độ Stress hàng ngày</label>
+                <select name="stress_level" value={formData.stress_level} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-purple-500 text-white">
+                  <option>Thấp - Cuộc sống thoải mái</option>
+                  <option>Trung bình - Áp lực công việc nhẹ</option>
+                  <option>Cao - Thường xuyên căng thẳng</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Động lực lớn nhất của bạn</label>
+                <input name="motivation" value={formData.motivation} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-purple-500 text-white" placeholder="Vd: Để mặc quần áo đẹp, Cải thiện sức khỏe..." />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Thông điệp gửi AI (Yêu cầu riêng biệt)</label>
+              <textarea name="expectations" value={formData.expectations} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 h-20 text-sm outline-none focus:border-purple-500 text-white" placeholder="Tôi muốn tập trung vào phần mông, tôi không thích ăn rau cải..." />
+            </div>
+          </section>
+          <div className="bg-[#a3e635]/5 border border-[#a3e635]/20 p-4 rounded-2xl flex gap-3">
+            <CheckCircle2 className="w-5 h-5 text-[#a3e635] shrink-0" />
+            <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-wider text-white">
+              Xác nhận: Thông tin này sẽ được mã hóa và gửi tới <span className="text-[#a3e635] font-bold">TrendFit AI Engine</span>. Dữ liệu này là cơ sở để chúng tôi cá nhân hóa 100% lộ trình của bạn.
+            </p>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex flex-col items-end px-6 border-r border-border-primary">
-              <span className="text-[10px] font-black text-text-tertiary uppercase mb-1">Chỉ số BMI AI</span>
-              <span className="text-2xl font-black text-[#a3e635]">{bmi}</span>
-            </div>
-            <button onClick={onClose} className="w-12 h-12 bg-bg-tertiary rounded-2xl flex items-center justify-center hover:bg-white/10 transition-colors text-text-tertiary">
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-
-        {/* Bọc nội dung Scrollable */}
-        <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            
-            {/* CỘT 1: NHÂN KHẨU & THỂ HÌNH */}
-            <div className="space-y-10">
-              <section>
-                <h3 className="flex items-center gap-3 text-[#a3e635] font-black uppercase tracking-widest text-xs mb-8 underline decoration-2 underline-offset-8">
-                   <User className="w-4 h-4" /> 1. Định danh & Đặc điểm
-                </h3>
-                <div className="space-y-5">
-                  <div className="bg-bg-tertiary/30 p-5 rounded-3xl border border-border-primary focus-within:border-[#a3e635] transition-all">
-                    <label className="block text-[10px] font-black text-text-tertiary uppercase mb-2">Tên người dùng</label>
-                    <input type="text" value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className="w-full bg-transparent border-none p-0 text-white font-bold text-lg focus:ring-0" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-5">
-                    <div className="bg-bg-tertiary/30 p-5 rounded-3xl border border-border-primary text-center">
-                      <label className="block text-[10px] font-black text-text-tertiary uppercase mb-2">Ngày sinh</label>
-                      <input type="date" value={formData.birthday} onChange={e => setFormData({...formData, birthday: e.target.value})} className="w-full bg-transparent border-none p-0 text-white font-bold text-sm focus:ring-0 text-center" />
-                    </div>
-                    <div className="bg-bg-tertiary/30 p-5 rounded-3xl border border-border-primary text-center">
-                      <label className="block text-[10px] font-black text-text-tertiary uppercase mb-2">Giới tính</label>
-                      <select value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} className="w-full bg-transparent border-none p-0 text-white font-bold text-sm focus:ring-0 appearance-none text-center">
-                        <option value="Nam">Nam</option>
-                        <option value="Nữ">Nữ</option>
-                        <option value="Khác">Khác</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="bg-bg-tertiary/30 p-5 rounded-3xl border border-border-primary">
-                    <label className="block text-[10px] font-black text-text-tertiary uppercase mb-2">Nghề nghiệp</label>
-                    <div className="flex items-center gap-3">
-                      <Briefcase className="w-4 h-4 text-text-tertiary" />
-                      <input type="text" value={formData.job} onChange={e => setFormData({...formData, job: e.target.value})} className="w-full bg-transparent border-none p-0 text-white font-bold focus:ring-0" placeholder="Chưa nhập..." />
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="flex items-center gap-3 text-blue-400 font-black uppercase tracking-widest text-xs mb-8 underline decoration-2 underline-offset-8">
-                   <Scale className="w-4 h-4" /> 2. Chỉ số cơ thể thực tế
-                </h3>
-                <div className="grid grid-cols-2 gap-5 mb-5">
-                  <div className="bg-bg-tertiary/30 p-6 rounded-3xl border border-border-primary text-center relative overflow-hidden group">
-                    <label className="block text-[10px] font-black text-text-tertiary uppercase mb-1">Cân nặng (kg)</label>
-                    <input type="number" value={formData.weight} onChange={e => setFormData({...formData, weight: parseFloat(e.target.value)})} className="w-full bg-transparent border-none p-0 text-white font-black text-3xl focus:ring-0 text-center" />
-                    <div className="absolute right-0 bottom-0 p-2 opacity-5"> <Scale className="w-12 h-12" /> </div>
-                  </div>
-                  <div className="bg-bg-tertiary/30 p-6 rounded-3xl border border-border-primary text-center relative overflow-hidden group">
-                    <label className="block text-[10px] font-black text-text-tertiary uppercase mb-1">Chiều cao (cm)</label>
-                    <input type="number" value={formData.height} onChange={e => setFormData({...formData, height: parseFloat(e.target.value)})} className="w-full bg-transparent border-none p-0 text-white font-black text-3xl focus:ring-0 text-center" />
-                  </div>
-                </div>
-                <div className="bg-bg-tertiary/30 p-6 rounded-[2.5rem] border border-border-primary grid grid-cols-3 gap-6">
-                  <div className="text-center">
-                    <label className="block text-[8px] font-black text-text-tertiary uppercase mb-1">Vòng ngực</label>
-                    <input type="number" value={formData.chest} onChange={e => setFormData({...formData, chest: parseFloat(e.target.value)})} className="w-full bg-transparent border-none p-0 text-white font-black text-xl focus:ring-0 text-center" />
-                  </div>
-                  <div className="text-center">
-                    <label className="block text-[8px] font-black text-text-tertiary uppercase mb-1">Vòng bụng</label>
-                    <input type="number" value={formData.waist} onChange={e => setFormData({...formData, waist: parseFloat(e.target.value)})} className="w-full bg-transparent border-none p-0 text-white font-black text-xl focus:ring-0 text-center" />
-                  </div>
-                  <div className="text-center">
-                    <label className="block text-[8px] font-black text-text-tertiary uppercase mb-1">Vòng mông</label>
-                    <input type="number" value={formData.hips} onChange={e => setFormData({...formData, hips: parseFloat(e.target.value)})} className="w-full bg-transparent border-none p-0 text-white font-black text-xl focus:ring-0 text-center" />
-                  </div>
-                </div>
-              </section>
-            </div>
-
-            {/* CỘT 2: DINH DƯỠNG & Y TẾ */}
-            <div className="space-y-10">
-              <section>
-                <h3 className="flex items-center gap-3 text-emerald-400 font-black uppercase tracking-widest text-xs mb-8 underline decoration-2 underline-offset-8">
-                   <Apple className="w-4 h-4" /> 3. Dinh dưỡng & Thói quen ăn
-                </h3>
-                <div className="space-y-5">
-                  <div className="bg-emerald-500/5 p-6 rounded-[2rem] border border-emerald-500/20">
-                    <label className="block text-[10px] font-black text-emerald-400 uppercase mb-3">Chế độ ăn ưu tiên</label>
-                    <select value={formData.diet_preference} onChange={e => setFormData({...formData, diet_preference: e.target.value})} className="w-full bg-transparent border-none p-0 text-white font-black text-xl focus:ring-0 appearance-none">
-                      <option>Bình thường</option>
-                      <option>Ăn chay (Có thể ăn chay)</option>
-                      <option>Ăn nhiều đạm (High Protein)</option>
-                      <option>Keto / Low Carb</option>
-                      <option>Eat Clean</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-5">
-                    <div className="bg-bg-tertiary/30 p-5 rounded-3xl border border-border-primary">
-                      <label className="block text-[10px] font-black text-text-tertiary uppercase mb-2">Số bữa ăn/ngày</label>
-                      <input type="number" value={formData.meals_per_day} onChange={e => setFormData({...formData, meals_per_day: parseInt(e.target.value)})} className="w-full bg-transparent border-none p-0 text-white font-black text-xl focus:ring-0" />
-                    </div>
-                    <div className="bg-bg-tertiary/30 p-5 rounded-3xl border border-border-primary">
-                      <label className="block text-[10px] font-black text-text-tertiary uppercase mb-2">Lít nước/ngày</label>
-                      <input type="number" step="0.1" value={formData.daily_water_goal} onChange={e => setFormData({...formData, daily_water_goal: parseFloat(e.target.value)})} className="w-full bg-transparent border-none p-0 text-white font-black text-xl focus:ring-0" />
-                    </div>
-                  </div>
-                  <div className="bg-bg-tertiary/30 p-5 rounded-3xl border border-border-primary">
-                    <label className="block text-[10px] font-black text-text-tertiary uppercase mb-2">Dị ứng & Kiêng kỵ</label>
-                    <input type="text" value={formData.allergies} onChange={e => setFormData({...formData, allergies: e.target.value})} className="w-full bg-transparent border-none p-0 text-white font-bold focus:ring-0" placeholder="Vd: Hải sản, Sữa..." />
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="flex items-center gap-3 text-red-400 font-black uppercase tracking-widest text-xs mb-8 underline decoration-2 underline-offset-8">
-                   <Stethoscope className="w-4 h-4" /> 4. Trạng thái Sức khỏe (Bắt buộc)
-                </h3>
-                <div className="space-y-4">
-                  <div className="bg-red-500/5 p-5 rounded-3xl border border-red-500/20">
-                    <label className="block text-[10px] font-black text-red-400 uppercase mb-2">Bệnh nền (Tim mạch, Tiểu đường...)</label>
-                    <textarea value={formData.health_condition} onChange={e => setFormData({...formData, health_condition: e.target.value})} className="w-full bg-transparent border-none p-0 text-white text-sm font-medium focus:ring-0 min-h-[60px] resize-none" placeholder="Nếu không có, hãy để trống..." />
-                  </div>
-                  <div className="bg-red-500/5 p-5 rounded-3xl border border-red-500/20">
-                    <label className="block text-[10px] font-black text-red-400 uppercase mb-2">Chấn thương cũ (Lưng, gối...)</label>
-                    <textarea value={formData.injuries} onChange={e => setFormData({...formData, injuries: e.target.value})} className="w-full bg-transparent border-none p-0 text-white text-sm font-medium focus:ring-0 min-h-[60px] resize-none" placeholder="Vd: Đau cột sống..." />
-                  </div>
-                  <div className="bg-bg-tertiary/30 p-5 rounded-3xl border border-border-primary flex items-center justify-between">
-                    <label className="text-[10px] font-black text-text-tertiary uppercase">Khói thuốc / Rượu bia</label>
-                    <select value={formData.smoke_drink} onChange={e => setFormData({...formData, smoke_drink: e.target.value})} className="bg-transparent border-none p-0 text-white font-bold text-sm focus:ring-0 appearance-none text-right">
-                      <option>Không bao giờ</option>
-                      <option>Thỉnh thoảng</option>
-                      <option>Thường xuyên</option>
-                    </select>
-                  </div>
-                </div>
-              </section>
-            </div>
-
-            {/* CỘT 3: VẬN ĐỘNG & TÂM LÝ AI */}
-            <div className="space-y-10">
-              <section>
-                <h3 className="flex items-center gap-3 text-orange-400 font-black uppercase tracking-widest text-xs mb-8 underline decoration-2 underline-offset-8">
-                   <Zap className="w-4 h-4" /> 5. Kinh nghiệm & Thói quen
-                </h3>
-                <div className="space-y-5">
-                  <div className="bg-bg-tertiary/30 p-5 rounded-3xl border border-border-primary">
-                    <label className="block text-[10px] font-black text-text-tertiary uppercase mb-2">Địa điểm tập</label>
-                    <select value={formData.workout_location} onChange={e => setFormData({...formData, workout_location: e.target.value})} className="w-full bg-transparent border-none p-0 text-white font-bold text-sm focus:ring-0 appearance-none">
-                      <option>Phòng Gym chuyên nghiệp</option>
-                      <option>Tập tại nhà (Home Workout)</option>
-                      <option>Ngoài trời / Công viên</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-5">
-                    <div className="bg-bg-tertiary/30 p-5 rounded-3xl border border-border-primary">
-                      <label className="block text-[10px] font-black text-text-tertiary uppercase mb-2">Phút / Buổi</label>
-                      <input type="number" value={formData.workout_duration} onChange={e => setFormData({...formData, workout_duration: parseInt(e.target.value)})} className="w-full bg-transparent border-none p-0 text-white font-black text-xl focus:ring-0" />
-                    </div>
-                    <div className="bg-bg-tertiary/30 p-5 rounded-3xl border border-border-primary">
-                      <label className="block text-[10px] font-black text-text-tertiary uppercase mb-2">Giờ ngủ / Đêm</label>
-                      <input type="number" value={formData.sleep_hours} onChange={e => setFormData({...formData, sleep_hours: parseInt(e.target.value)})} className="w-full bg-transparent border-none p-0 text-white font-black text-xl focus:ring-0" />
-                    </div>
-                  </div>
-                  <div className="bg-orange-500/5 p-6 rounded-[2rem] border border-orange-500/20">
-                    <label className="block text-[10px] font-black text-orange-400 uppercase mb-3 text-center">Dụng cụ hiện có</label>
-                    <div className="flex items-center gap-3 justify-center text-white font-black text-lg">
-                      <Dumbbell className="w-5 h-5 text-orange-400" />
-                      <select value={formData.equipment_available} onChange={e => setFormData({...formData, equipment_available: e.target.value})} className="bg-transparent border-none p-0 text-white font-black text-sm focus:ring-0 appearance-none">
-                        <option>Đầy đủ tạ & máy móc (Gym)</option>
-                        <option>Tạ đơn & Thảm</option>
-                        <option>Dây kháng lực</option>
-                        <option>Không dụng cụ</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="flex items-center gap-3 text-purple-400 font-black uppercase tracking-widest text-xs mb-8 underline decoration-2 underline-offset-8">
-                   <Smile className="w-4 h-4" /> 6. Phân tích Tâm lý AI
-                </h3>
-                <div className="space-y-4">
-                  <div className="bg-purple-500/5 p-5 rounded-3xl border border-purple-500/20">
-                    <label className="block text-[10px] font-black text-purple-400 uppercase mb-2">Động lực lớn nhất</label>
-                    <input type="text" value={formData.motivation} onChange={e => setFormData({...formData, motivation: e.target.value})} className="w-full bg-transparent border-none p-0 text-white text-sm font-bold focus:ring-0" placeholder="Vd: Để mặc đẹp, Khỏe mạnh..." />
-                  </div>
-                  <div className="bg-purple-500/5 p-5 rounded-3xl border border-purple-500/20">
-                    <label className="block text-[10px] font-black text-purple-400 uppercase mb-2">Mong muốn riêng gửi AI</label>
-                    <textarea value={formData.expectations} onChange={e => setFormData({...formData, expectations: e.target.value})} className="w-full bg-transparent border-none p-0 text-white text-sm font-medium focus:ring-0 min-h-[100px] resize-none" placeholder="Tôi không thích ăn rau, tôi muốn giảm mỡ bụng..." />
-                  </div>
-                </div>
-              </section>
-            </div>
-          </div>
-        </div>
+        </fieldset>
+      </form>
 
         {/* Footer */}
-        <div className="p-8 border-t border-border-primary bg-bg-tertiary/60 backdrop-blur-3xl flex items-center justify-between">
-           <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-[#a3e635] rounded-full animate-pulse shadow-[0_0_15px_#a3e635]"></div>
-              <span className="text-[10px] font-black text-text-tertiary uppercase tracking-widest">Dữ liệu sẵn sàng cho AI Optimization</span>
-           </div>
-           <div className="flex items-center gap-4">
-              <button onClick={onClose} className="px-10 py-4 rounded-2xl bg-bg-tertiary text-text-secondary font-black uppercase text-xs tracking-widest hover:bg-white/5 transition-all">Hủy (Escape)</button>
-              <button 
-                onClick={handleSave} 
-                disabled={loading}
-                className="px-12 py-4 rounded-2xl bg-[#a3e635] text-black font-black uppercase text-xs tracking-widest hover:bg-[#bef264] transition-all flex items-center gap-3 shadow-2xl shadow-[#a3e635]/30 disabled:opacity-50 group"
+        <div className="p-4 md:p-5 border-t border-border-primary bg-bg-tertiary/50 backdrop-blur-xl flex justify-between items-center">
+          <div className="hidden sm:block">
+            <span className="text-[9px] font-bold text-text-tertiary uppercase tracking-[2px]">TrendFit Precision Profile</span>
+          </div>
+          {isEditing ? (
+            <div className="flex gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => setIsEditing(false)}
+                className="flex-1 sm:flex-none border border-border-primary text-text-secondary hover:text-white font-bold py-2.5 px-8 rounded-xl hover:bg-white/5 transition-all text-sm"
               >
-                {loading ? 'Đang lưu' : (
-                  <>
-                    <Save className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    Cập nhật toàn bộ AI Profile
-                  </>
-                )}
+                HỦY
               </button>
-           </div>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="flex-1 sm:flex-none bg-[#a3e635] text-black font-black py-2.5 px-8 rounded-xl hover:bg-[#bef264] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 text-sm"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>CẬP NHẬT HỒ SƠ <Zap className="w-4 h-4" /></>}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onClose}
+              className="w-full sm:w-auto bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold py-2.5 px-8 rounded-xl transition-all text-sm"
+            >
+              ĐÓNG
+            </button>
+          )}
         </div>
       </div>
     </div>

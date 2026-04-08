@@ -4,39 +4,80 @@ import { useAuth } from './contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 
+import { useOutletContext } from 'react-router-dom';
+
 export default function MainContent() {
-  const { user, isLoggedIn, refreshTick } = useAuth();
+  const { onProfileClick } = useOutletContext<{ onProfileClick: () => void }>();
+  const { user, isLoggedIn, refreshTick, profile } = useAuth();
   const [stats, setStats] = useState({
     workout_duration: 0,
     calories_burned: 0,
     remaining_workouts: 0,
     streak_days: 1
   });
+  const [weeklyStats, setWeeklyStats] = useState({
+    total_workouts: 0,
+    total_calories: 0,
+    total_minutes: 0,
+    streak: 1
+  });
 
   useEffect(() => {
-    async function fetchStats() {
+    async function fetchData() {
       if (!user) return;
       try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        
+        // 1. Lấy dữ liệu ngày hôm nay
         const [lifestyleRes, progressLogRes] = await Promise.all([
           supabase.from('lifestyle_settings').select('workout_duration, weekly_workouts').eq('user_id', user.id).maybeSingle(),
-          supabase.from('daily_progress_logs').select('calories_burned').eq('user_id', user.id).eq('log_date', today).maybeSingle()
+          supabase.from('daily_progress_logs').select('calories_burned, workout_duration').eq('user_id', user.id).eq('log_date', todayStr).maybeSingle()
         ]);
 
         if (lifestyleRes.data) {
           setStats(prev => ({
             ...prev,
-            workout_duration: lifestyleRes.data?.workout_duration || 0,
+            workout_duration: progressLogRes.data?.workout_duration || 0,
             calories_burned: progressLogRes.data?.calories_burned ?? 0,
             remaining_workouts: lifestyleRes.data?.weekly_workouts || 0
           }));
         }
+
+        // 2. Lấy dữ liệu 7 ngày gần nhất cho Tổng hợp hàng tuần
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+
+        const { data: weeklyLogs } = await supabase
+          .from('daily_progress_logs')
+          .select('calories_burned, workout_duration, log_date')
+          .eq('user_id', user.id)
+          .gte('log_date', sevenDaysAgoStr)
+          .lte('log_date', todayStr);
+
+        if (weeklyLogs && weeklyLogs.length > 0) {
+          const totalCalories = weeklyLogs.reduce((sum, log) => sum + (log.calories_burned || 0), 0);
+          const totalMinutes = weeklyLogs.reduce((sum, log) => sum + (log.workout_duration || 0), 0);
+          const completedWorkouts = weeklyLogs.filter(log => (log.workout_duration || 0) > 0).length;
+
+          setWeeklyStats({
+            total_workouts: completedWorkouts,
+            total_calories: totalCalories,
+            total_minutes: totalMinutes,
+            streak: profile?.streak_days || 1
+          });
+        }
       } catch (e) { console.error(e); }
     }
-    if (isLoggedIn) fetchStats();
-  }, [user, isLoggedIn, refreshTick]);
+    if (isLoggedIn) fetchData();
+  }, [user, isLoggedIn, refreshTick, profile]);
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Member';
+  const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Thành viên';
+  const nameParts = rawName.trim().split(/\s+/);
+  const userName = nameParts.length > 1 
+    ? `${nameParts[nameParts.length - 1]} ${nameParts[0]}` 
+    : rawName;
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,7 +102,10 @@ export default function MainContent() {
               <p className="text-[9px] sm:text-xs md:text-sm text-white/80 mb-4 max-w-lg">
                 Hôm nay AI đã sẵn sàng lộ trình tập luyện <span className="text-[#a3e635] font-semibold">{stats.workout_duration} phút</span> cho bạn.
               </p>
-              <button className="text-[#a3e635] font-bold flex items-center gap-1 hover:text-[#bef264] transition-colors group uppercase tracking-widest text-[8px] sm:text-[9px] md:text-[10px]">
+              <button 
+                onClick={onProfileClick}
+                className="text-[#a3e635] font-bold flex items-center gap-1 hover:text-[#bef264] transition-colors group uppercase tracking-widest text-[8px] sm:text-[9px] md:text-[10px]"
+              >
                 Xem chi tiết hồ sơ < ArrowRight className="w-2 h-2 sm:w-3 sm:h-3 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
@@ -206,25 +250,25 @@ export default function MainContent() {
         <div className="grid grid-cols-4 gap-4 text-center divide-x divide-border-primary">
           <div>
             <p className="text-3xl font-bold text-[#a3e635] mb-1">
-              <AnimatedNumber value={stats.streak_days} />
+              <AnimatedNumber value={weeklyStats.total_workouts} />
             </p>
             <p className="text-xs text-text-tertiary font-medium">Buổi tập</p>
           </div>
           <div>
             <p className="text-3xl font-bold text-[#ff5e00] mb-1">
-              <AnimatedNumber value={stats.calories_burned} />
+              <AnimatedNumber value={weeklyStats.total_calories} />
             </p>
             <p className="text-xs text-text-tertiary font-medium">Calo tiêu thụ</p>
           </div>
           <div>
             <p className="text-3xl font-bold text-[#06b6d4] mb-1">
-              <AnimatedNumber value={stats.workout_duration} />
+              <AnimatedNumber value={weeklyStats.total_minutes} />
             </p>
             <p className="text-xs text-text-tertiary font-medium">Phút</p>
           </div>
           <div>
             <p className="text-3xl font-bold text-[#ec4899] mb-1">
-              <AnimatedNumber value={stats.streak_days} />
+              <AnimatedNumber value={weeklyStats.streak} />
             </p>
             <p className="text-xs text-text-tertiary font-medium">Ngày liên tiếp</p>
           </div>

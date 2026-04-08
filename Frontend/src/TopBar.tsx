@@ -4,10 +4,14 @@ import { useAuth } from './contexts/AuthContext';
 
 export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: () => void, onProfileClick?: () => void }) {
   const [isLightMode, setIsLightMode] = useState(false);
-  const { isLoggedIn, openAuthModal, user } = useAuth();
+  const { isLoggedIn, openAuthModal, user, profile } = useAuth();
 
-  const userInitial = user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || '?';
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Thành viên';
+  const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Thành viên';
+  const nameParts = rawName.trim().split(/\s+/);
+  const userName = nameParts.length > 1 
+    ? `${nameParts[nameParts.length - 1]} ${nameParts[0]}` 
+    : rawName;
+  const userInitial = nameParts[nameParts.length - 1]?.charAt(0).toUpperCase() || rawName.charAt(0).toUpperCase() || '?';
 
   useEffect(() => {
     if (isLightMode) {
@@ -41,7 +45,7 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
           {isLightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
         
-        <div className="flex items-center gap-3 sm:pl-2">
+        <div className="flex items-center gap-6 sm:pl-2">
           <button className="text-text-secondary hover:text-text-primary transition-colors relative">
             <Bell className="w-5 h-5" />
             <span className="absolute top-0 right-0 w-2 h-2 bg-[#a3e635] rounded-full"></span>
@@ -51,9 +55,9 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
           </button>
           
           {isLoggedIn ? (
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={onProfileClick}>
-              <span className="text-sm font-medium text-text-primary hidden md:block ml-2 group-hover:text-[#a3e635] transition-colors">{userName}</span>
-              <div className="w-8 h-8 rounded-full bg-[#a3e635] flex items-center justify-center text-black font-bold text-sm sm:ml-2 shadow-lg shadow-[#a3e635]/10 group-hover:scale-110 transition-transform">
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-text-primary hidden md:block">{userName}</span>
+              <div className="w-8 h-8 rounded-full bg-[#a3e635] flex items-center justify-center text-black font-bold text-sm shadow-lg shadow-[#a3e635]/10">
                 {userInitial}
               </div>
             </div>

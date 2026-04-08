@@ -18,15 +18,19 @@ const menuItems = [
 ];
 
 export default function Sidebar({ onClose, onProfileClick }: { onClose?: () => void, onProfileClick?: () => void }) {
-  const { isLoggedIn, signOut, user, openAuthModal, isAdmin } = useAuth();
+  const { isLoggedIn, signOut, user, openAuthModal, isAdmin, profile } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Lọc menu items dựa trên vai trò (admin/user)
   const filteredMenuItems = menuItems.filter(item => !item.adminOnly || isAdmin);
 
   // Lấy chữ cái đầu của tên hoặc email
-  const userInitial = user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || '?';
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Member';
+  const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Thành viên';
+  const nameParts = rawName.trim().split(/\s+/);
+  const userName = nameParts.length > 1 
+    ? `${nameParts[nameParts.length - 1]} ${nameParts[0]}` 
+    : rawName;
+  const userInitial = nameParts[nameParts.length - 1]?.charAt(0).toUpperCase() || rawName.charAt(0).toUpperCase() || '?';
 
   return (
     <aside className="w-64 shrink-0 bg-bg-secondary border-r border-border-primary flex flex-col h-full relative">

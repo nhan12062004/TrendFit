@@ -271,7 +271,7 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
               onClick={onClose}
               className="absolute right-6 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 rounded-xl transition-all text-text-tertiary hover:text-white group"
             >
-              <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+              <X className="w-6 h-6" />
             </button>
           )}
         </div>

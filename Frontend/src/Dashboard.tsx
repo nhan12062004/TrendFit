@@ -13,22 +13,16 @@ export default function Dashboard() {
 
   return (
     <div className="flex w-full h-screen overflow-hidden bg-bg-primary">
-      {/* Survey Form for new users */}
+      {/* Initial Setup for new users */}
       {isLoggedIn && !isCheckingProfile && !hasProfile && (
         <SurveyForm onComplete={() => refreshProfile()} />
       )}
 
-      {/* Profile Editor (Reusing SurveyForm) */}
-      {isProfileOpen && (
-        <SurveyForm 
-          onComplete={() => {
-            setIsProfileOpen(false);
-            refreshProfile();
-          }} 
-          onClose={() => setIsProfileOpen(false)}
-          isOpen={true} 
-        />
-      )}
+      {/* Profile Editor Modal */}
+      <ProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+      />
 
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
@@ -46,7 +40,7 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col min-w-0 w-full h-screen overflow-y-auto custom-scrollbar">
         <TopBar onMenuClick={() => setIsMobileMenuOpen(true)} onProfileClick={() => setIsProfileOpen(true)} />
         <main className="flex-1 p-4 md:p-6 flex flex-col xl:flex-row gap-6 min-w-0">
-          <Outlet />
+          <Outlet context={{ onProfileClick: () => setIsProfileOpen(true) }} />
         </main>
       </div>
     </div>

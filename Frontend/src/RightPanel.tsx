@@ -1,4 +1,5 @@
-import { Moon, Droplet, Dumbbell, Utensils, Timer, TrendingUp, Scale, Ruler, Clock, Brain } from 'lucide-react';
+import { Moon, Droplet, Dumbbell, Utensils, Timer, TrendingUp, Scale, Ruler, Clock, Brain, Target, Trophy, Blocks } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import AnimatedNumber from './components/AnimatedNumber';
 import { useAuth } from './contexts/AuthContext';
 import { useEffect, useState } from 'react';
@@ -129,8 +130,11 @@ export default function RightPanel() {
   const remainingKcal = targetKcal > 0 ? targetKcal - consumedKcal : 0;
   const progressPercent = targetKcal > 0 ? (consumedKcal / targetKcal) * 100 : 0;
 
+  const navigate = useNavigate();
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 scrollbar-hide">
+      {/* Metrics Row */}
       <div className="bg-bg-secondary rounded-2xl p-4 md:p-6 border border-border-primary grid grid-cols-3">
         <div className="text-center flex flex-col items-center justify-center">
           <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center mb-2 text-text-secondary"><Scale className="w-4 h-4" /></div>
@@ -155,6 +159,7 @@ export default function RightPanel() {
         </div>
       </div>
 
+      {/* Calories Progress */}
       <div className="bg-bg-secondary rounded-2xl p-4 md:p-6 border border-border-primary">
         <div className="flex justify-between items-center mb-4">
           <div className="text-center">
@@ -252,12 +257,13 @@ export default function RightPanel() {
         </div>
       </div>
 
+      {/* Today's Plan */}
       <div>
         <h3 className="text-base md:text-lg font-bold text-text-primary mb-4">Kế hoạch hôm nay</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
           {todayWorkouts.length > 0 ? (
             todayWorkouts.map((plan, i) => (
-              <div key={i} className="bg-bg-secondary rounded-xl p-3 border border-border-primary flex items-center gap-3 group hover:border-[#a3e635] transition-colors cursor-pointer">
+              <div key={i} className="bg-bg-secondary rounded-xl p-3 border border-border-primary flex items-center gap-3 group hover:border-[#a3e635] transition-colors cursor-pointer" onClick={() => navigate('/exercises')}>
                 <img src={plan.img} alt={plan.title} className="w-12 h-12 rounded-lg object-cover" />
                 <div className="flex-1">
                   <h4 className="text-sm font-bold text-text-primary">{plan.title}</h4>
@@ -281,24 +287,41 @@ export default function RightPanel() {
         </div>
       </div>
 
+      {/* Quick Actions - Expanded */}
       <div>
         <h3 className="text-base md:text-lg font-bold text-text-primary mb-4">Thao tác nhanh</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 gap-3">
-          <button className="bg-bg-secondary border border-border-primary hover:border-[#a3e635] rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
+          <button onClick={() => navigate('/smart-planner')} className="bg-bg-secondary border border-border-primary hover:border-orange-500 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
+            <Brain className="w-5 h-5 text-orange-500 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-text-secondary uppercase">Kế hoạch AI</span>
+          </button>
+          <button onClick={() => navigate('/exercises')} className="bg-bg-secondary border border-border-primary hover:border-[#a3e635] rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <Dumbbell className="w-5 h-5 text-[#a3e635] group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase">Ghi bài tập</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase">Bài tập</span>
           </button>
-          <button className="bg-bg-secondary border border-border-primary hover:border-[#ff5e00] rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
+          <button onClick={() => navigate('/diet-plan')} className="bg-bg-secondary border border-border-primary hover:border-[#ff5e00] rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <Utensils className="w-5 h-5 text-[#ff5e00] group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase">Ghi bữa ăn</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase">Dinh dưỡng</span>
           </button>
-          <button className="bg-bg-secondary border border-border-primary hover:border-blue-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
-            <Timer className="w-5 h-5 text-blue-400" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase">Bấm giờ</span>
-          </button>
-          <button className="bg-bg-secondary border border-border-primary hover:border-purple-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
+          <button onClick={() => navigate('/progress')} className="bg-bg-secondary border border-border-primary hover:border-purple-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <TrendingUp className="w-5 h-5 text-purple-400" />
             <span className="text-[10px] font-bold text-text-secondary uppercase tracking-tight">Tiến độ</span>
+          </button>
+          <button onClick={() => navigate('/goals')} className="bg-bg-secondary border border-border-primary hover:border-blue-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
+            <Target className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-text-secondary uppercase">Mục tiêu</span>
+          </button>
+          <button onClick={() => navigate('/achievements')} className="bg-bg-secondary border border-border-primary hover:border-yellow-500 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
+            <Trophy className="w-5 h-5 text-yellow-500 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-text-secondary uppercase">Thành tích</span>
+          </button>
+          <button onClick={() => navigate('/workout-builder')} className="bg-bg-secondary border border-border-primary hover:border-cyan-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
+            <Blocks className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-text-secondary uppercase">Tạo bài tập</span>
+          </button>
+          <button onClick={() => navigate('/workout-timer')} className="bg-bg-secondary border border-border-primary hover:border-red-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
+            <Timer className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-text-secondary uppercase">Bấm giờ</span>
           </button>
         </div>
       </div>

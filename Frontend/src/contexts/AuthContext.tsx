@@ -6,6 +6,7 @@ import AuthModal from '../components/AuthModal';
 interface AuthContextType {
   isLoggedIn: boolean;
   user: User | null;
+  profile: any | null;
   hasProfile: boolean;
   isCheckingProfile: boolean;
   userRole: string | null;
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<any | null>(null);
   const [hasProfile, setHasProfile] = useState(false);
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -32,10 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsCheckingProfile(true);
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, role')
+      .select('*')
       .eq('id', userId)
       .single();
     
+    setProfile(data || null);
     setHasProfile(!!data && !error);
     setUserRole(data?.role || 'user');
     setIsCheckingProfile(false);
@@ -88,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{ 
       isLoggedIn: !!user, 
       user, 
+      profile,
       hasProfile,
       isCheckingProfile,
       userRole,
