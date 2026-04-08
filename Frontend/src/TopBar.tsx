@@ -2,9 +2,12 @@ import { Search, Moon, Sun, Bell, MessageSquare, Menu, LogIn } from 'lucide-reac
 import { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 
-export default function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
+export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: () => void, onProfileClick?: () => void }) {
   const [isLightMode, setIsLightMode] = useState(false);
-  const { isLoggedIn, login, user } = useAuth();
+  const { isLoggedIn, openAuthModal, user } = useAuth();
+
+  const userInitial = user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || '?';
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Thành viên';
 
   useEffect(() => {
     if (isLightMode) {
@@ -24,7 +27,7 @@ export default function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="text"
-            placeholder="Search products, order,..."
+            placeholder="Tìm kiếm bài tập, thực đơn,..."
             className="w-full bg-bg-secondary border border-border-primary rounded-full py-3 pl-12 pr-4 text-sm text-text-primary placeholder-text-tertiary focus:outline-none focus:border-[#a3e635]"
           />
         </div>
@@ -48,19 +51,19 @@ export default function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
           </button>
           
           {isLoggedIn ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-text-primary hidden md:block ml-2">{user?.name}</span>
-              <div className="w-8 h-8 rounded-full bg-bg-quaternary flex items-center justify-center text-[#a3e635] font-bold text-sm sm:ml-2 cursor-pointer">
-                {user?.initial}
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={onProfileClick}>
+              <span className="text-sm font-medium text-text-primary hidden md:block ml-2 group-hover:text-[#a3e635] transition-colors">{userName}</span>
+              <div className="w-8 h-8 rounded-full bg-[#a3e635] flex items-center justify-center text-black font-bold text-sm sm:ml-2 shadow-lg shadow-[#a3e635]/10 group-hover:scale-110 transition-transform">
+                {userInitial}
               </div>
             </div>
           ) : (
             <button 
-              onClick={login}
+              onClick={() => openAuthModal()}
               className="bg-[#a3e635] text-black px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 hover:bg-[#bef264] transition-colors sm:ml-2"
             >
               <LogIn className="w-4 h-4" />
-              Log in
+              Đăng nhập
             </button>
           )}
         </div>

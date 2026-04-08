@@ -1,33 +1,43 @@
-import { Home, Activity, Utensils, Timer, Target, Trophy, Settings, Dumbbell, Droplet, Flame, Shield, Calculator, TrendingUp, X, Zap, Blocks, Brain, LogIn } from 'lucide-react';
+import { Home, Activity, Utensils, Timer, Target, Trophy, Settings, Dumbbell, Droplet, Flame, Shield, Calculator, TrendingUp, X, Zap, Blocks, Brain, LogIn, LogOut, User } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { useState } from 'react';
+import AuthModal from './components/AuthModal';
 
 const menuItems = [
-  { icon: Home, label: 'Overview', path: '/overview' },
-  { icon: Brain, label: 'Smart Planner', path: '/smart-planner', badge: 'New', badgeColor: 'bg-orange-500 text-white' },
-  { icon: Dumbbell, label: 'Exercises', path: '/exercises' },
-  { icon: Utensils, label: 'Diet Plan', path: '/diet-plan' },
-  { icon: Timer, label: 'Workout Timer', path: '/workout-timer' },
-  { icon: Target, label: 'Goals', path: '/goals' },
-  { icon: Trophy, label: 'Achievements', badge: '2', badgeColor: 'bg-[#a3e635] text-black', path: '/achievements' },
-  { icon: Blocks, label: 'Workout Builder', path: '/workout-builder' },
-  { icon: TrendingUp, label: 'Progress', path: '/progress' },
-  { icon: Shield, label: 'Admin Panel', path: '/admin-panel' },
+  { icon: Home, label: 'Tổng quan', path: '/overview' },
+  { icon: Brain, label: 'Lập kế hoạch AI', path: '/smart-planner', badge: 'Mới', badgeColor: 'bg-orange-500 text-white' },
+  { icon: Dumbbell, label: 'Bài tập', path: '/exercises' },
+  { icon: Utensils, label: 'Chế độ ăn', path: '/diet-plan' },
+  { icon: Timer, label: 'Đồng hồ bấm giờ', path: '/workout-timer' },
+  { icon: Target, label: 'Mục tiêu', path: '/goals' },
+  { icon: Trophy, label: 'Thành tích', badge: '2', badgeColor: 'bg-[#a3e635] text-black', path: '/achievements' },
+  { icon: Blocks, label: 'Tạo bài tập', path: '/workout-builder' },
+  { icon: TrendingUp, label: 'Tiến độ', path: '/progress' },
+  { icon: Shield, label: 'Quản trị viên', path: '/admin-panel', adminOnly: true },
 ];
 
-export default function Sidebar({ onClose }: { onClose?: () => void }) {
-  const { isLoggedIn, login, user } = useAuth();
+export default function Sidebar({ onClose, onProfileClick }: { onClose?: () => void, onProfileClick?: () => void }) {
+  const { isLoggedIn, signOut, user, openAuthModal, isAdmin } = useAuth();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Lọc menu items dựa trên vai trò (admin/user)
+  const filteredMenuItems = menuItems.filter(item => !item.adminOnly || isAdmin);
+
+  // Lấy chữ cái đầu của tên hoặc email
+  const userInitial = user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || '?';
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Member';
 
   return (
-    <aside className="w-64 shrink-0 bg-bg-secondary border-r border-border-primary flex flex-col h-full">
+    <aside className="w-64 shrink-0 bg-bg-secondary border-r border-border-primary flex flex-col h-full relative">
       <div className="p-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-[#a3e635] p-2 rounded-xl">
-            <Zap className="w-6 h-6 text-black fill-black" />
+          <div className="flex items-center justify-center w-10 h-10">
+            <img src="/logo.svg" alt="TrendFit Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-text-primary leading-tight">TrendFit</h1>
-            <p className="text-[10px] text-[#a3e635] font-semibold tracking-widest uppercase">Member Fitness</p>
+            <p className="text-[10px] text-[#a3e635] font-semibold tracking-widest uppercase">Thành viên Fitness</p>
           </div>
         </div>
         {onClose && (
@@ -37,8 +47,8 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         )}
       </div>
 
-      <nav className="flex-1 py-4 px-4 space-y-1">
-        {menuItems.map((item, index) => (
+      <nav className="flex-1 py-4 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+        {filteredMenuItems.map((item, index) => (
           <NavLink
             key={index}
             to={item.path}
@@ -64,40 +74,75 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-border-primary">
+      <div className="p-4 border-t border-border-primary text-text-tertiary">
         <div className="bg-bg-tertiary rounded-xl p-4 mb-4">
           <div className="flex items-center gap-2 mb-2">
             <Droplet className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-medium text-text-secondary">Water Intake</span>
+            <span className="text-sm font-medium text-text-secondary">Lượng nước uống</span>
           </div>
           <div className="flex gap-1 mb-2">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="h-8 flex-1 bg-bg-quaternary rounded-md"></div>
             ))}
           </div>
-          <p className="text-xs text-text-tertiary">0/5 Liters</p>
+          <p className="text-xs">0/5 Liters</p>
         </div>
 
         {isLoggedIn ? (
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-10 h-10 rounded-full bg-bg-quaternary flex items-center justify-center text-[#a3e635] font-bold">
-              {user?.initial}
+          <div className="relative">
+            {/* Settings Popover */}
+            {isSettingsOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setIsSettingsOpen(false)}
+                />
+                <div className="absolute bottom-full left-0 w-full mb-2 bg-bg-tertiary border border-border-primary rounded-2xl shadow-2xl p-2 z-20 animate-in slide-in-from-bottom-2 duration-200">
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-quaternary rounded-xl transition-colors">
+                    <User className="w-4 h-4" />
+                    Cài đặt tài khoản
+                  </button>
+                  <button 
+                    onClick={() => signOut()}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-xl transition-colors mt-1"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Đăng xuất
+                  </button>
+                </div>
+              </>
+            )}
+
+            <div className="flex items-center gap-3">
+              <div 
+                className="flex items-center gap-3 px-2 cursor-pointer hover:bg-bg-tertiary rounded-xl p-1 transition-colors overflow-hidden"
+                onClick={onProfileClick}
+              >
+                <div className="w-10 h-10 rounded-full bg-[#a3e635] flex items-center justify-center text-black font-bold shrink-0 shadow-lg shadow-[#a3e635]/10">
+                  {userInitial}
+                </div>
+                <div className="overflow-hidden">
+                  <p className="text-sm font-semibold text-text-primary truncate">{userName}</p>
+                  <p className="text-xs text-text-tertiary flex items-center gap-1">
+                    <Flame className="w-3 h-3 text-[#ff5e00]" /> 1 ngày liên tiếp
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                className={`p-2 rounded-lg ml-auto transition-colors ${isSettingsOpen ? 'bg-[#a3e635] text-black' : 'text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary'}`}
+              >
+                <Settings className="w-4 h-4" />
+              </button>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-text-primary">{user?.name}</p>
-              <p className="text-xs text-text-tertiary flex items-center gap-1">
-                <Flame className="w-3 h-3 text-[#ff5e00]" /> 1 day streak
-              </p>
-            </div>
-            <Settings className="w-4 h-4 text-text-tertiary ml-auto cursor-pointer hover:text-text-primary" />
           </div>
         ) : (
           <button 
-            onClick={login}
+            onClick={() => openAuthModal()}
             className="w-full bg-[#a3e635] text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#bef264] transition-colors"
           >
             <LogIn className="w-5 h-5" />
-            Log in
+            Đăng nhập
           </button>
         )}
       </div>

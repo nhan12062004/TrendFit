@@ -1,169 +1,299 @@
-import { Moon, Droplet, Dumbbell, Utensils, Timer, TrendingUp, Scale, Ruler, Clock } from 'lucide-react';
+import { Moon, Droplet, Dumbbell, Utensils, Timer, TrendingUp, Scale, Ruler, Clock, Brain } from 'lucide-react';
+import AnimatedNumber from './components/AnimatedNumber';
+import { useAuth } from './contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { supabase } from './lib/supabase';
 
 export default function RightPanel() {
+  const { user, isLoggedIn, refreshTick } = useAuth();
+  const [metrics, setMetrics] = useState({
+    weight: 0,
+    height: 0,
+    age: 0,
+    gender: 'male',
+    activity_level: 'moderate',
+    goal: 'maintenance',
+    water_goal: 2.5,
+    sleep_hours: 7
+  });
+
+  const [consumedKcal, setConsumedKcal] = useState(0);
+  const [actualWater, setActualWater] = useState(0);
+  const [todayWorkouts, setTodayWorkouts] = useState<any[]>([]);
+  const [sleepHours, setSleepHours] = useState({ actual: 0, target: 7 });
+  const [aiTargetKcal, setAiTargetKcal] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function fetchMetrics() {
+      if (!user) return;
+      try {
+        const { data: profile } = await supabase.from('profiles').select('birthday, gender').eq('id', user.id).single();
+        const { data: body } = await supabase.from('body_metrics').select('weight, height').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).single();
+        const { data: lifestyle } = await supabase.from('lifestyle_settings').select('daily_water_goal, activity_level, fitness_goal').eq('user_id', user.id).single();
+        const { data: health } = await supabase.from('health_conditions').select('sleep_hours').eq('user_id', user.id).single();
+
+        const today = new Date().toISOString().split('T')[0];
+        const { data: log } = await supabase
+          .from('daily_progress_logs')
+          .select('calories_consumed, water_intake_ml, sleep_hours')
+          .eq('user_id', user.id)
+          .eq('log_date', today)
+          .maybeSingle();
+
+        let targetSleep = 7;
+        if (health?.sleep_hours) {
+          const sleepStr = String(health.sleep_hours);
+          if (sleepStr.includes('-')) {
+            // Lấy số sau dấu gạch ngang (ví dụ 8 trong 7-8)
+            targetSleep = parseInt(sleepStr.split('-')[1]) || 7;
+          } else {
+            targetSleep = parseInt(sleepStr) || 7;
+          }
+        }
+        
+        const targetWater = lifestyle?.daily_water_goal || 2.5;
+
+        if (log) {
+          setConsumedKcal(log.calories_consumed || 0);
+          setActualWater(log.water_intake_ml ? log.water_intake_ml / 1000 : 0);
+          setSleepHours({
+            actual: log.sleep_hours || 0,
+            target: targetSleep
+          });
+        } else {
+          setConsumedKcal(0);
+          setActualWater(0);
+          setSleepHours({
+            actual: 0,
+            target: targetSleep
+          });
+        }
+
+        // Lấy mục tiêu calo từ AI
+        const { data: nutritionPlan } = await supabase
+          .from('nutrition_plans')
+          .select('total_calories')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (nutritionPlan) {
+          setAiTargetKcal(nutritionPlan.total_calories);
+        }
+
+        // Lấy lộ trình tập luyện
+        const { data: workoutRec } = await supabase
+          .from('ai_recommendations')
+          .select('recommendation_content')
+          .eq('user_id', user.id)
+          .eq('plan_type', 'workout')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (workoutRec?.recommendation_content) {
+          const content = typeof workoutRec.recommendation_content === 'string' 
+            ? JSON.parse(workoutRec.recommendation_content) 
+            : workoutRec.recommendation_content;
+          setTodayWorkouts(Array.isArray(content) ? content : []);
+        }
+
+        let age = 0;
+        if (profile?.birthday) {
+          age = new Date().getFullYear() - new Date(profile.birthday).getFullYear();
+        }
+
+        setMetrics({
+          weight: body?.weight || 0,
+          height: body?.height || 0,
+          age: age || 0,
+          gender: profile?.gender || 'male',
+          activity_level: lifestyle?.activity_level || 'moderate',
+          goal: lifestyle?.fitness_goal || 'maintenance',
+          water_goal: targetWater,
+          sleep_hours: targetSleep
+        });
+      } catch (e) { 
+        console.error('Error fetching metrics/workouts:', e); 
+      }
+    }
+    if (isLoggedIn) fetchMetrics();
+  }, [user, isLoggedIn, refreshTick]);
+
+  const targetKcal = aiTargetKcal || 0;
+  const remainingKcal = targetKcal > 0 ? targetKcal - consumedKcal : 0;
+  const progressPercent = targetKcal > 0 ? (consumedKcal / targetKcal) * 100 : 0;
+
   return (
     <div className="flex flex-col gap-6">
-      {/* User Stats Grid */}
       <div className="bg-bg-secondary rounded-2xl p-4 md:p-6 border border-border-primary grid grid-cols-3">
         <div className="text-center flex flex-col items-center justify-center">
-          <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center mb-2 text-text-secondary">
-            <Scale className="w-4 h-4" />
-          </div>
-          <span className="block text-lg font-bold text-[#a3e635]">60 kg</span>
-          <span className="text-[10px] text-text-tertiary">Weight</span>
+          <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center mb-2 text-text-secondary"><Scale className="w-4 h-4" /></div>
+          <span className="block text-lg font-bold text-[#a3e635]">
+            <AnimatedNumber value={metrics.weight} /> kg
+          </span>
+          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-tight">Cân nặng</span>
         </div>
-
-        <div className="text-center flex flex-col items-center justify-center">
-          <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center mb-2 text-text-secondary">
-            <Ruler className="w-4 h-4" />
-          </div>
-          <span className="block text-lg font-bold text-[#a3e635]">170 cm</span>
-          <span className="text-[10px] text-text-tertiary">Height</span>
+        <div className="text-center flex flex-col items-center justify-center border-x border-border-primary">
+          <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center mb-2 text-text-secondary"><Ruler className="w-4 h-4" /></div>
+          <span className="block text-lg font-bold text-[#a3e635]">
+            <AnimatedNumber value={metrics.height} /> cm
+          </span>
+          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-tight">Chiều cao</span>
         </div>
-
         <div className="text-center flex flex-col items-center justify-center">
-          <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center mb-2 text-text-secondary">
-            <Clock className="w-4 h-4" />
-          </div>
-          <span className="block text-lg font-bold text-[#a3e635]">25 yrs</span>
-          <span className="text-[10px] text-text-tertiary">Age</span>
+          <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center mb-2 text-text-secondary"><Clock className="w-4 h-4" /></div>
+          <span className="block text-lg font-bold text-[#a3e635]">
+            <AnimatedNumber value={metrics.age} /> tuổi
+          </span>
+          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-tight">Tuổi</span>
         </div>
       </div>
 
-      {/* Calorie Chart */}
       <div className="bg-bg-secondary rounded-2xl p-4 md:p-6 border border-border-primary">
         <div className="flex justify-between items-center mb-4">
           <div className="text-center">
-            <span className="block text-lg font-bold text-text-primary">350 kcal</span>
-            <span className="text-[10px] text-text-tertiary">Consumed</span>
+            <span className="block text-lg font-bold text-text-primary">
+              <AnimatedNumber value={consumedKcal} /> kcal
+            </span>
+            <span className="text-[10px] text-text-tertiary">Đã nạp</span>
           </div>
-          
-          {/* Custom SVG Donut Chart */}
           <div className="relative w-24 h-24">
-            <svg viewBox="0 0 36 36" className="w-full h-full">
-              <path
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--bg-tertiary)"
-                strokeWidth="3"
-              />
-              <path
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#a3e635"
-                strokeWidth="3"
-                strokeDasharray="20, 100"
-                className="animate-pulse"
+            <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
+              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" strokeWidth="3" />
+              <path 
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                fill="none" 
+                stroke="#a3e635" 
+                strokeWidth="3" 
+                strokeDasharray={`${progressPercent}, 100`} 
+                className="transition-all duration-[1000ms] ease-out" 
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-bold text-text-primary">350</span>
-              <span className="text-[8px] text-text-tertiary">kcal</span>
+              <span className="text-xl font-bold text-text-primary leading-none">
+                <AnimatedNumber value={targetKcal} />
+              </span>
+              <span className="text-[8px] text-text-tertiary uppercase font-bold tracking-widest mt-1">Mục tiêu</span>
             </div>
           </div>
-
           <div className="text-center">
-            <span className="block text-lg font-bold text-text-primary">1650 kcal</span>
-            <span className="text-[10px] text-text-tertiary">Remaining</span>
+            <span className="block text-lg font-bold text-text-primary">
+              <AnimatedNumber value={remainingKcal > 0 ? remainingKcal : 0} /> kcal
+            </span>
+            <span className="text-[10px] text-text-tertiary font-medium">Còn lại</span>
           </div>
         </div>
-
         <div className="flex justify-between mt-6 px-2">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-[#a3e635]"></div>
-            <span className="text-[10px] text-text-secondary">P - 10/12g</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-            <span className="text-[10px] text-text-secondary">C - 10/12g</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-[#ff5e00]"></div>
-            <span className="text-[10px] text-text-secondary">F - 10/12g</span>
-          </div>
+          <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[#a3e635]"></div><span className="text-[10px] text-text-secondary font-bold">P-{Math.round(targetKcal * 0.3 / 4)}g</span></div>
+          <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-[10px] text-text-secondary font-bold">C-{Math.round(targetKcal * 0.4 / 4)}g</span></div>
+          <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[#ff5e00]"></div><span className="text-[10px] text-text-secondary font-bold">F-{Math.round(targetKcal * 0.3 / 9)}g</span></div>
         </div>
       </div>
 
-      {/* Sleep & Water */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4">
-        <div className="bg-bg-secondary rounded-2xl p-4 border border-border-primary flex flex-col items-center justify-center">
+      <div className="grid grid-cols-2 gap-4">
+        {/* Sleep Progress */}
+        <div className="bg-bg-secondary rounded-2xl p-4 border border-border-primary flex flex-col items-center justify-center transition-all hover:bg-bg-tertiary/20">
           <div className="flex items-center gap-2 mb-3 w-full">
             <Moon className="w-4 h-4 text-purple-500" />
-            <span className="text-xs font-medium text-text-secondary">Sleep</span>
+            <span className="text-xs font-medium text-text-secondary">Ngủ</span>
           </div>
           <div className="relative w-16 h-16 mb-2">
-             <svg viewBox="0 0 36 36" className="w-full h-full">
+            <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" strokeWidth="4" />
-              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#a855f7" strokeWidth="4" strokeDasharray="60, 100" />
+              <path 
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                fill="none" 
+                stroke="#a855f7" 
+                strokeWidth="4" 
+                strokeDasharray={`${(sleepHours.actual / sleepHours.target) * 100}, 100`} 
+                className="transition-all duration-[1000ms] ease-out"
+              />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm font-bold text-text-primary">5/8</span>
+              <span className="text-sm font-bold text-text-primary">
+                <AnimatedNumber value={sleepHours.actual} />/{sleepHours.target}
+              </span>
             </div>
           </div>
-          <span className="text-[10px] text-text-tertiary">Hours</span>
+          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-widest">Giờ giấc</span>
         </div>
 
-        <div className="bg-bg-secondary rounded-2xl p-4 border border-border-primary flex flex-col items-center justify-center">
+        {/* Water Progress */}
+        <div className="bg-bg-secondary rounded-2xl p-4 border border-border-primary flex flex-col items-center justify-center transition-all hover:bg-bg-tertiary/20">
           <div className="flex items-center gap-2 mb-3 w-full">
             <Droplet className="w-4 h-4 text-blue-400" />
-            <span className="text-xs font-medium text-text-secondary">Water</span>
+            <span className="text-xs font-medium text-text-secondary">Nước</span>
           </div>
           <div className="relative w-16 h-16 mb-2">
-             <svg viewBox="0 0 36 36" className="w-full h-full">
+            <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" strokeWidth="4" />
+              <path 
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                fill="none" 
+                stroke="#60a5fa" 
+                strokeWidth="4" 
+                strokeDasharray={`${(actualWater / metrics.water_goal) * 100}, 100`} 
+                className="transition-all duration-[1000ms] ease-out"
+              />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm font-bold text-text-primary">0/5</span>
+              <span className="text-sm font-bold text-text-primary">
+                <AnimatedNumber value={actualWater} />/{metrics.water_goal}
+              </span>
             </div>
           </div>
-          <span className="text-[10px] text-text-tertiary">Liters</span>
+          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-widest">Lít</span>
         </div>
       </div>
 
-      {/* Today Plan */}
       <div>
-        <h3 className="text-base md:text-lg font-bold text-text-primary mb-4">Today Plan</h3>
+        <h3 className="text-base md:text-lg font-bold text-text-primary mb-4">Kế hoạch hôm nay</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
-          {[
-            { title: 'Push Up', desc: '100 Push up a day', progress: 45, img: 'https://images.unsplash.com/photo-1598971639058-fab3c3109a00?q=80&w=100&auto=format&fit=crop' },
-            { title: 'Sit Up', desc: '20 Sit up a day', progress: 75, img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=100&auto=format&fit=crop' },
-            { title: 'Knee Push Up', desc: '20 Sit up a day', progress: 45, img: 'https://images.unsplash.com/photo-1566241440091-ec10de8db2e1?q=80&w=100&auto=format&fit=crop' },
-            { title: 'Belly Fat Burner', desc: '20 Sit up a day', progress: 60, img: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=100&auto=format&fit=crop' },
-          ].map((plan, i) => (
-            <div key={i} className="bg-bg-secondary rounded-xl p-3 border border-border-primary flex items-center gap-3">
-              <img src={plan.img} alt={plan.title} className="w-12 h-12 rounded-lg object-cover" />
-              <div className="flex-1">
-                <h4 className="text-sm font-bold text-text-primary">{plan.title}</h4>
-                <p className="text-[10px] text-text-tertiary">{plan.desc}</p>
-                <div className="mt-2 h-1 w-full bg-bg-tertiary rounded-full overflow-hidden">
-                  <div className="h-full bg-[#a3e635]" style={{ width: `${plan.progress}%` }}></div>
+          {todayWorkouts.length > 0 ? (
+            todayWorkouts.map((plan, i) => (
+              <div key={i} className="bg-bg-secondary rounded-xl p-3 border border-border-primary flex items-center gap-3 group hover:border-[#a3e635] transition-colors cursor-pointer">
+                <img src={plan.img} alt={plan.title} className="w-12 h-12 rounded-lg object-cover" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-bold text-text-primary">{plan.title}</h4>
+                  <p className="text-[10px] text-text-tertiary tracking-tight line-clamp-1">{plan.desc}</p>
+                  <div className="mt-2 h-1 w-full bg-bg-tertiary rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-[#a3e635]/30 group-hover:bg-[#a3e635] transition-all duration-[1500ms] ease-out" 
+                      style={{ width: `${plan.progress}%` }}
+                    ></div>
+                  </div>
                 </div>
+                <span className="text-xs font-bold text-[#a3e635]">{plan.progress}%</span>
               </div>
-              <span className="text-xs font-bold text-[#a3e635]">{plan.progress}%</span>
+            ))
+          ) : (
+            <div className="bg-bg-tertiary/20 rounded-2xl p-6 border border-dashed border-border-primary text-center">
+              <Brain className="w-8 h-8 text-text-tertiary mx-auto mb-2 opacity-20" />
+              <p className="text-xs text-text-tertiary">Chưa có lộ trình hôm nay. AI đang xử lý giáo án của bạn...</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
 
-      {/* Quick Actions */}
       <div>
-        <h3 className="text-base md:text-lg font-bold text-text-primary mb-4">Quick Actions</h3>
+        <h3 className="text-base md:text-lg font-bold text-text-primary mb-4">Thao tác nhanh</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 gap-3">
-          <button className="bg-bg-secondary border border-border-primary hover:border-[#a3e635] rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors">
-            <Dumbbell className="w-5 h-5 text-[#a3e635]" />
-            <span className="text-xs font-medium text-text-secondary">Log Exercise</span>
+          <button className="bg-bg-secondary border border-border-primary hover:border-[#a3e635] rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
+            <Dumbbell className="w-5 h-5 text-[#a3e635] group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-text-secondary uppercase">Ghi bài tập</span>
           </button>
-          <button className="bg-bg-secondary border border-border-primary hover:border-[#ff5e00] rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors">
-            <Utensils className="w-5 h-5 text-[#ff5e00]" />
-            <span className="text-xs font-medium text-text-secondary">Log Meal</span>
+          <button className="bg-bg-secondary border border-border-primary hover:border-[#ff5e00] rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
+            <Utensils className="w-5 h-5 text-[#ff5e00] group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-text-secondary uppercase">Ghi bữa ăn</span>
           </button>
-          <button className="bg-bg-secondary border border-border-primary hover:border-blue-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors">
+          <button className="bg-bg-secondary border border-border-primary hover:border-blue-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <Timer className="w-5 h-5 text-blue-400" />
-            <span className="text-xs font-medium text-text-secondary">Timer</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase">Bấm giờ</span>
           </button>
-          <button className="bg-bg-secondary border border-border-primary hover:border-purple-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors">
+          <button className="bg-bg-secondary border border-border-primary hover:border-purple-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <TrendingUp className="w-5 h-5 text-purple-400" />
-            <span className="text-xs font-medium text-text-secondary">Progress</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-tight">Tiến độ</span>
           </button>
         </div>
       </div>
