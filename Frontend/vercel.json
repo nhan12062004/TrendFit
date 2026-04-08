@@ -1,8 +1,6 @@
 {
   "rewrites": [
-    {
-      "source": "/((?!assets/|.*\\.).*)",
-      "destination": "/index.html"
-    }
+    { "handle": "filesystem" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
