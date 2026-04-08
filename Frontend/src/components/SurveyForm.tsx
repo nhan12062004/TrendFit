@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface SurveyFormProps {
   onComplete: () => void;
@@ -26,7 +27,9 @@ interface SurveyFormProps {
 
 export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  // ... rest of state stays same for now as they are values sent to DB
   const [formData, setFormData] = useState({
     // Section 1: Thông tin cá nhân
     full_name: user?.user_metadata?.full_name || '',
@@ -260,10 +263,10 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
         <div className="p-4 md:p-5 border-b border-border-primary bg-bg-tertiary/50 backdrop-blur-xl relative">
           <div className="flex items-center gap-2 mb-0.5">
             <Sparkles className="w-4 h-4 text-[#a3e635] animate-pulse" />
-            <span className="text-[9px] font-bold text-[#a3e635] uppercase tracking-[3px]">Hệ thống phân tích AI</span>
+            <span className="text-[9px] font-bold text-[#a3e635] uppercase tracking-[3px]">{t('survey.ai_system')}</span>
           </div>
-          <h2 className="text-xl md:text-2xl font-black text-text-primary">{isOpen ? 'Chỉnh sửa hồ sơ sức khỏe' : 'Xây dựng hồ sơ sức khỏe toàn diện'}</h2>
-          <p className="text-[11px] text-text-secondary">Thông tin càng chi tiết, AI sẽ tạo kế hoạch tập luyện và thực đơn <span className="text-[#a3e635] font-bold italic">chính xác tuyệt đối</span> cho bạn.</p>
+          <h2 className="text-xl md:text-2xl font-black text-text-primary">{isOpen ? t('survey.edit_title') : t('survey.new_title')}</h2>
+          <p className="text-[11px] text-text-secondary">{t('survey.subtitle_1')} <span className="text-[#a3e635] font-bold italic">{t('survey.subtitle_highlight')}</span> {t('survey.subtitle_2')}</p>
 
           {/* Close Button (Only for Profile Editing) */}
           {isOpen && onClose && (
@@ -283,7 +286,7 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-l-4 border-[#a3e635] pl-4">
               <User className="w-5 h-5 text-[#a3e635]" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">1. Nhân khẩu học & Nghề nghiệp</h3>
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{t('survey.section_1_title')}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">

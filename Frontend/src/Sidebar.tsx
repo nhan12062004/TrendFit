@@ -4,19 +4,7 @@ import { useAuth } from './contexts/AuthContext';
 import { useState } from 'react';
 import AuthModal from './components/AuthModal';
 import { supabase } from './lib/supabase';
-
-const menuItems = [
-  { icon: Home, label: 'Tổng quan', path: '/overview' },
-  { icon: Brain, label: 'Lập kế hoạch AI', path: '/smart-planner', badge: 'Mới', badgeColor: 'bg-orange-500 text-white' },
-  { icon: Dumbbell, label: 'Bài tập', path: '/exercises' },
-  { icon: Utensils, label: 'Chế độ ăn', path: '/diet-plan' },
-  { icon: Timer, label: 'Đồng hồ bấm giờ', path: '/workout-timer' },
-  { icon: Target, label: 'Mục tiêu', path: '/goals' },
-  { icon: Trophy, label: 'Thành tích', badge: '2', badgeColor: 'bg-[#a3e635] text-black', path: '/achievements' },
-  { icon: Blocks, label: 'Tạo bài tập', path: '/workout-builder' },
-  { icon: TrendingUp, label: 'Tiến độ', path: '/progress' },
-  { icon: Shield, label: 'Quản trị viên', path: '/admin-panel', adminOnly: true },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: { 
   onClose?: () => void, 
@@ -26,9 +14,23 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
   const { isLoggedIn, signOut, user, openAuthModal, isAdmin, profile, refreshProfile } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
+  const { t } = useTranslation();
+
+  const menuItems = [
+    { icon: Home, label: t('sidebar.overview', 'Tổng quan'), path: '/overview' },
+    { icon: Brain, label: t('sidebar.ai_planner', 'Lập kế hoạch AI'), path: '/smart-planner', badge: t('common.new', 'Mới'), badgeColor: 'bg-orange-500 text-white' },
+    { icon: Dumbbell, label: t('sidebar.exercises', 'Bài tập'), path: '/exercises' },
+    { icon: Utensils, label: t('sidebar.diet', 'Chế độ ăn'), path: '/diet-plan' },
+    { icon: Timer, label: t('sidebar.timer', 'Đồng hồ bấm giờ'), path: '/workout-timer' },
+    { icon: Target, label: t('sidebar.goals', 'Mục tiêu'), path: '/goals' },
+    { icon: Trophy, label: t('sidebar.achievements', 'Thành tích'), badge: '2', badgeColor: 'bg-[#a3e635] text-black', path: '/achievements' },
+    { icon: Blocks, label: t('sidebar.creator', 'Tạo bài tập'), path: '/workout-builder' },
+    { icon: TrendingUp, label: t('sidebar.progress', 'Tiến độ'), path: '/progress' },
+    { icon: Shield, label: t('sidebar.admin', 'Quản trị viên'), path: '/admin-panel', adminOnly: true },
+  ];
 
   const handleUnlinkTelegram = async () => {
-    if (!confirm('Bạn có chắc chắn muốn hủy liên kết với Telegram Bot không?')) return;
+    if (!confirm(t('sidebar.unlink_tg_confirm', 'Bạn có chắc chắn muốn hủy liên kết với Telegram Bot không?'))) return;
     
     setIsUnlinking(true);
     try {
@@ -39,20 +41,18 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
 
       if (error) throw error;
       await refreshProfile();
-      alert('Đã hủy liên kết Telegram thành công');
+      alert(t('sidebar.unlink_tg_success', 'Đã hủy liên kết Telegram thành công'));
     } catch (err: any) {
-      alert('Lỗi: ' + err.message);
+      alert(t('common.error', 'Lỗi: ') + err.message);
     } finally {
       setIsUnlinking(false);
       setIsSettingsOpen(false);
     }
   };
 
-  // Lọc menu items dựa trên vai trò (admin/user)
   const filteredMenuItems = menuItems.filter(item => !item.adminOnly || isAdmin);
 
-  // Lấy chữ cái đầu của tên hoặc email
-  const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Thành viên';
+  const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || t('common.member', 'Thành viên');
   const nameParts = rawName.trim().split(/\s+/);
   const userName = nameParts.length > 1 
     ? `${nameParts[nameParts.length - 1]} ${nameParts[0]}` 
@@ -68,7 +68,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
           </div>
           <div>
             <h1 className="text-xl font-bold text-text-primary leading-tight">TrendFit</h1>
-            <p className="text-[10px] text-[#a3e635] font-semibold tracking-widest uppercase">Thành viên Fitness</p>
+            <p className="text-[10px] text-[#a3e635] font-semibold tracking-widest uppercase">{t('common.fitness_member', 'Thành viên Fitness')}</p>
           </div>
         </div>
         {onClose && (
@@ -109,14 +109,14 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
         <div className="bg-bg-tertiary rounded-xl p-4 mb-4">
           <div className="flex items-center gap-2 mb-2">
             <Droplet className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-medium text-text-secondary">Lượng nước uống</span>
+            <span className="text-sm font-medium text-text-secondary">{t('sidebar.water_intake', 'Lượng nước uống')}</span>
           </div>
           <div className="flex gap-1 mb-2">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="h-8 flex-1 bg-bg-quaternary rounded-md"></div>
             ))}
           </div>
-          <p className="text-xs">0/5 Liters</p>
+          <p className="text-xs">0/5 {t('sidebar.liters', 'Liters')}</p>
         </div>
 
         {isLoggedIn ? (
@@ -137,7 +137,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-quaternary rounded-xl transition-colors"
                   >
                     <User className="w-4 h-4" />
-                    Đổi mật khẩu
+                    {t('sidebar.change_password', 'Đổi mật khẩu')}
                   </button>
                   {profile?.telegram_chat_id ? (
                     <div className="flex items-center justify-between px-3 py-2 mt-1 bg-[#a3e635]/10 rounded-xl group/tg">
@@ -145,14 +145,14 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                         <CheckCircle2 className="w-4 h-4 text-[#a3e635]" />
                         <div className="flex flex-col">
                           <span className="text-[10px] text-[#a3e635] font-bold uppercase">Telegram</span>
-                          <span className="text-[9px] text-text-tertiary">Đã kết nối</span>
+                          <span className="text-[9px] text-text-tertiary">{t('sidebar.connected', 'Đã kết nối')}</span>
                         </div>
                       </div>
                       <button 
                         onClick={handleUnlinkTelegram}
                         disabled={isUnlinking}
                         className="p-1.5 hover:bg-red-500/10 text-text-tertiary hover:text-red-500 rounded-lg transition-all opacity-0 group-hover/tg:opacity-100"
-                        title="Hủy liên kết"
+                        title={t('sidebar.unlink', 'Hủy liên kết')}
                       >
                         {isUnlinking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                       </button>
@@ -166,7 +166,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:text-[#24A1DE] hover:bg-[#24A1DE]/5 rounded-xl transition-colors mt-1"
                     >
                       <Send className="w-4 h-4" />
-                      Kết nối Telegram Bot
+                      {t('sidebar.connect_tg', 'Kết nối Telegram Bot')}
                     </button>
                   )}
                   <button 
@@ -174,7 +174,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-xl transition-colors mt-1"
                   >
                     <LogOut className="w-4 h-4" />
-                    Đăng xuất
+                    {t('common.logout', 'Đăng xuất')}
                   </button>
                 </div>
               </>
@@ -191,7 +191,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                 <div className="overflow-hidden">
                   <p className="text-sm font-semibold text-text-primary truncate">{userName}</p>
                   <p className="text-xs text-text-tertiary flex items-center gap-1">
-                    <Flame className="w-3 h-3 text-[#ff5e00]" /> 1 ngày liên tiếp
+                    <Flame className="w-3 h-3 text-[#ff5e00]" /> 1 {t('sidebar.streak_days', 'ngày liên tiếp')}
                   </p>
                 </div>
               </div>
@@ -209,7 +209,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
             className="w-full bg-[#a3e635] text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#bef264] transition-colors"
           >
             <LogIn className="w-5 h-5" />
-            Đăng nhập
+            {t('common.login', 'Đăng nhập')}
           </button>
         )}
       </div>

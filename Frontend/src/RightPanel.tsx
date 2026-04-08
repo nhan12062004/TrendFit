@@ -4,9 +4,11 @@ import AnimatedNumber from './components/AnimatedNumber';
 import { useAuth } from './contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 export default function RightPanel() {
   const { user, isLoggedIn, refreshTick } = useAuth();
+  const { t } = useTranslation();
   const [metrics, setMetrics] = useState({
     weight: 0,
     height: 0,
@@ -141,21 +143,21 @@ export default function RightPanel() {
           <span className="block text-lg font-bold text-[#a3e635]">
             <AnimatedNumber value={metrics.weight} /> kg
           </span>
-          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-tight">Cân nặng</span>
+          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-tight">{t('right_panel.weight')}</span>
         </div>
         <div className="text-center flex flex-col items-center justify-center border-x border-border-primary">
           <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center mb-2 text-text-secondary"><Ruler className="w-4 h-4" /></div>
           <span className="block text-lg font-bold text-[#a3e635]">
             <AnimatedNumber value={metrics.height} /> cm
           </span>
-          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-tight">Chiều cao</span>
+          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-tight">{t('right_panel.height')}</span>
         </div>
         <div className="text-center flex flex-col items-center justify-center">
           <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center mb-2 text-text-secondary"><Clock className="w-4 h-4" /></div>
           <span className="block text-lg font-bold text-[#a3e635]">
-            <AnimatedNumber value={metrics.age} /> tuổi
+            <AnimatedNumber value={metrics.age} /> {t('right_panel.years_old')}
           </span>
-          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-tight">Tuổi</span>
+          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-tight">{t('right_panel.age')}</span>
         </div>
       </div>
 
@@ -166,7 +168,7 @@ export default function RightPanel() {
             <span className="block text-lg font-bold text-text-primary">
               <AnimatedNumber value={consumedKcal} /> kcal
             </span>
-            <span className="text-[10px] text-text-tertiary">Đã nạp</span>
+            <span className="text-[10px] text-text-tertiary">{t('right_panel.calories_consumed')}</span>
           </div>
           <div className="relative w-24 h-24">
             <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
@@ -184,14 +186,14 @@ export default function RightPanel() {
               <span className="text-xl font-bold text-text-primary leading-none">
                 <AnimatedNumber value={targetKcal} />
               </span>
-              <span className="text-[8px] text-text-tertiary uppercase font-bold tracking-widest mt-1">Mục tiêu</span>
+              <span className="text-[8px] text-text-tertiary uppercase font-bold tracking-widest mt-1">{t('right_panel.goal')}</span>
             </div>
           </div>
           <div className="text-center">
             <span className="block text-lg font-bold text-text-primary">
               <AnimatedNumber value={remainingKcal > 0 ? remainingKcal : 0} /> kcal
             </span>
-            <span className="text-[10px] text-text-tertiary font-medium">Còn lại</span>
+            <span className="text-[10px] text-text-tertiary font-medium">{t('right_panel.remaining')}</span>
           </div>
         </div>
         <div className="flex justify-between mt-6 px-2">
@@ -206,7 +208,7 @@ export default function RightPanel() {
         <div className="bg-bg-secondary rounded-2xl p-4 border border-border-primary flex flex-col items-center justify-center transition-all hover:bg-bg-tertiary/20">
           <div className="flex items-center gap-2 mb-3 w-full">
             <Moon className="w-4 h-4 text-purple-500" />
-            <span className="text-xs font-medium text-text-secondary">Ngủ</span>
+            <span className="text-xs font-medium text-text-secondary">{t('right_panel.sleep')}</span>
           </div>
           <div className="relative w-16 h-16 mb-2">
             <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
@@ -226,14 +228,14 @@ export default function RightPanel() {
               </span>
             </div>
           </div>
-          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-widest">Giờ giấc</span>
+          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-widest">{t('right_panel.sleep_hours')}</span>
         </div>
 
         {/* Water Progress */}
         <div className="bg-bg-secondary rounded-2xl p-4 border border-border-primary flex flex-col items-center justify-center transition-all hover:bg-bg-tertiary/20">
           <div className="flex items-center gap-2 mb-3 w-full">
             <Droplet className="w-4 h-4 text-blue-400" />
-            <span className="text-xs font-medium text-text-secondary">Nước</span>
+            <span className="text-xs font-medium text-text-secondary">{t('right_panel.water')}</span>
           </div>
           <div className="relative w-16 h-16 mb-2">
             <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
@@ -253,13 +255,13 @@ export default function RightPanel() {
               </span>
             </div>
           </div>
-          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-widest">Lít</span>
+          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-widest">{t('right_panel.liters_unit')}</span>
         </div>
       </div>
 
       {/* Today's Plan */}
       <div>
-        <h3 className="text-base md:text-lg font-bold text-text-primary mb-4">Kế hoạch hôm nay</h3>
+        <h3 className="text-base md:text-lg font-bold text-text-primary mb-4">{t('right_panel.todays_plan')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
           {todayWorkouts.length > 0 ? (
             todayWorkouts.map((plan, i) => (
@@ -281,7 +283,7 @@ export default function RightPanel() {
           ) : (
             <div className="bg-bg-tertiary/20 rounded-2xl p-6 border border-dashed border-border-primary text-center">
               <Brain className="w-8 h-8 text-text-tertiary mx-auto mb-2 opacity-20" />
-              <p className="text-xs text-text-tertiary">Chưa có lộ trình hôm nay. AI đang xử lý giáo án của bạn...</p>
+              <p className="text-xs text-text-tertiary">{t('right_panel.no_roadmap_today')}</p>
             </div>
           )}
         </div>
@@ -289,39 +291,39 @@ export default function RightPanel() {
 
       {/* Quick Actions - Expanded */}
       <div>
-        <h3 className="text-base md:text-lg font-bold text-text-primary mb-4">Thao tác nhanh</h3>
+        <h3 className="text-base md:text-lg font-bold text-text-primary mb-4">{t('right_panel.quick_actions')}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 gap-3">
           <button onClick={() => navigate('/smart-planner')} className="bg-bg-secondary border border-border-primary hover:border-orange-500 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <Brain className="w-5 h-5 text-orange-500 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase">Kế hoạch AI</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase">{t('sidebar.ai_planner')}</span>
           </button>
           <button onClick={() => navigate('/exercises')} className="bg-bg-secondary border border-border-primary hover:border-[#a3e635] rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <Dumbbell className="w-5 h-5 text-[#a3e635] group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase">Bài tập</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase">{t('sidebar.exercises')}</span>
           </button>
           <button onClick={() => navigate('/diet-plan')} className="bg-bg-secondary border border-border-primary hover:border-[#ff5e00] rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <Utensils className="w-5 h-5 text-[#ff5e00] group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase">Dinh dưỡng</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase">{t('sidebar.diet')}</span>
           </button>
           <button onClick={() => navigate('/progress')} className="bg-bg-secondary border border-border-primary hover:border-purple-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <TrendingUp className="w-5 h-5 text-purple-400" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-tight">Tiến độ</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-tight">{t('sidebar.progress')}</span>
           </button>
           <button onClick={() => navigate('/goals')} className="bg-bg-secondary border border-border-primary hover:border-blue-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <Target className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase">Mục tiêu</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase">{t('sidebar.goals')}</span>
           </button>
           <button onClick={() => navigate('/achievements')} className="bg-bg-secondary border border-border-primary hover:border-yellow-500 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <Trophy className="w-5 h-5 text-yellow-500 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase">Thành tích</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase">{t('sidebar.achievements')}</span>
           </button>
           <button onClick={() => navigate('/workout-builder')} className="bg-bg-secondary border border-border-primary hover:border-cyan-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <Blocks className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase">Tạo bài tập</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase">{t('sidebar.creator')}</span>
           </button>
           <button onClick={() => navigate('/workout-timer')} className="bg-bg-secondary border border-border-primary hover:border-red-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors group">
             <Timer className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase">Bấm giờ</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase">{t('sidebar.timer')}</span>
           </button>
         </div>
       </div>
