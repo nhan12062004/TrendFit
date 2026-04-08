@@ -226,10 +226,10 @@ export default function MainContent() {
         </div>
         <div className="grid grid-cols-4 gap-4">
           {[
-            { title: t('services.workout_program', 'CHƯƠNG TRÌNH TẬP LUYỆN'), img: '/images/service-1.jpg' },
-            { title: t('services.nutrition_plan', 'KẾ HOẠCH DINH DƯỠNG'), img: '/images/service-2.jpg' },
-            { title: t('services.practice_time', 'THỜI GIAN THỰC HÀNH'), img: '/images/service-3.jpg' },
-            { title: t('services.diet_program', 'CHƯƠNG TRÌNH ĂN KIÊNG'), img: '/images/service-4.jpg' }
+            { title: t('services.workout_program', 'CHƯƠNG TRÌNH TẬP LUYỆN'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/WORKOUT%20PROGRAM.jpg' },
+            { title: t('services.nutrition_plan', 'KẾ HOẠCH DINH DƯỠNG'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/NUTRITION%20PLAN.jpg' },
+            { title: t('services.practice_time', 'THỜI GIAN THỰC HÀNH'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/PRACTICE%20TIME.jpg' },
+            { title: t('services.diet_program', 'CHƯƠNG TRÌNH ĂN KIÊNG'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/DIET%20PROGRAM.jpg' }
           ].map((service, i) => (
             <div key={i} className="bg-bg-secondary rounded-2xl overflow-hidden border border-border-primary cursor-pointer hover:border-[#a3e635] transition-colors">
               <div className="h-32 overflow-hidden">

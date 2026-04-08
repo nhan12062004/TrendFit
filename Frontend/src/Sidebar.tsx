@@ -1,7 +1,7 @@
 import { Home, Activity, Utensils, Timer, Target, Trophy, Settings, Dumbbell, Droplet, Flame, Shield, Calculator, TrendingUp, X, Zap, Blocks, Brain, LogIn, LogOut, User, Send, CheckCircle2, Trash2, Loader2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AuthModal from './components/AuthModal';
 import { supabase } from './lib/supabase';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,32 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const { t } = useTranslation();
+  const [waterIntake, setWaterIntake] = useState(0);
+  const [waterGoal, setWaterGoal] = useState(2.5);
+
+  const fetchWater = async () => {
+    if (!user) return;
+    const today = new Date().toISOString().split('T')[0];
+    const { data: log } = await supabase
+      .from('daily_progress_logs')
+      .select('water_intake_ml')
+      .eq('user_id', user.id)
+      .eq('log_date', today)
+      .maybeSingle();
+
+    const { data: lifestyle } = await supabase
+      .from('lifestyle_settings')
+      .select('daily_water_goal')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (log) setWaterIntake((log.water_intake_ml || 0) / 1000);
+    if (lifestyle) setWaterGoal(lifestyle.daily_water_goal || 2.5);
+  };
+
+  useEffect(() => {
+    if (isLoggedIn) fetchWater();
+  }, [isLoggedIn, user]);
 
   const menuItems = [
     { icon: Home, label: t('sidebar.overview', 'Tổng quan'), path: '/overview' },
@@ -106,17 +132,49 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
       </nav>
 
       <div className="p-4 border-t border-border-primary text-text-tertiary">
-        <div className="bg-bg-tertiary rounded-xl p-4 mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Droplet className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-medium text-text-secondary">{t('sidebar.water_intake', 'Lượng nước uống')}</span>
+        <div 
+          className="bg-bg-tertiary rounded-xl p-4 mb-4 cursor-pointer hover:bg-bg-quaternary transition-colors group"
+          onClick={async () => {
+            if (!isLoggedIn) return;
+            const newIntake = waterIntake + 0.25;
+            const today = new Date().toISOString().split('T')[0];
+            const { error } = await supabase
+              .from('daily_progress_logs')
+              .upsert({ 
+                user_id: user?.id, 
+                log_date: today, 
+                water_intake_ml: newIntake * 1000 
+              }, { onConflict: 'user_id,log_date' });
+            
+            if (!error) setWaterIntake(newIntake);
+          }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Droplet className="w-4 h-4 text-blue-400" />
+              <span className="text-sm font-medium text-text-secondary">{t('sidebar.water_intake', 'Lượng nước uống')}</span>
+            </div>
+            <span className="text-[10px] text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity">+250ml</span>
           </div>
           <div className="flex gap-1 mb-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-8 flex-1 bg-bg-quaternary rounded-md"></div>
-            ))}
+            {[1, 2, 3, 4, 5].map((i) => {
+              const threshold = (waterGoal / 5) * i;
+              const isFilled = waterIntake >= threshold;
+              const isPartial = !isFilled && waterIntake > threshold - (waterGoal / 5);
+              
+              return (
+                <div 
+                  key={i} 
+                  className={`h-8 flex-1 rounded-md transition-all duration-500 ${
+                    isFilled ? 'bg-blue-500' : isPartial ? 'bg-blue-500/30' : 'bg-bg-quaternary'
+                  }`}
+                />
+              );
+            })}
           </div>
-          <p className="text-xs">0/5 {t('sidebar.liters', 'Liters')}</p>
+          <p className="text-xs font-medium text-text-primary">
+            {waterIntake.toFixed(2)}/{waterGoal} {t('sidebar.liters', 'Liters')}
+          </p>
         </div>
 
         {isLoggedIn ? (
