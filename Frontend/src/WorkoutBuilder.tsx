@@ -294,19 +294,26 @@ const SortableRoutineItem = ({
   return (
     <div ref={setNodeRef} style={style} className="relative mb-3">
       <div className="bg-bg-secondary border border-border-primary rounded-2xl p-3 sm:p-4 group hover:border-border-secondary transition-colors">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-text-tertiary hover:text-text-primary">
-            <GripVertical className="w-5 h-5" />
-          </button>
-
-          <div className="w-16 h-16 rounded-xl bg-bg-tertiary overflow-hidden border border-border-primary shrink-0">
-            <ExerciseThumb src={item.gif_url} alt={item.name} />
+        {/* Mobile Layout */}
+        <div className="sm:hidden">
+          <div className="flex items-center gap-2 mb-3">
+            <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-text-tertiary hover:text-text-primary shrink-0">
+              <GripVertical className="w-5 h-5" />
+            </button>
+            <h3 className="text-sm font-bold text-text-primary uppercase truncate flex-1">{item.name}</h3>
+            <button
+              onClick={() => onDelete(item.tempId)}
+              className="p-1.5 text-text-tertiary hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
+            >
+              <Trash2 className="w-4.5 h-4.5" />
+            </button>
           </div>
 
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-text-primary uppercase truncate">{item.name}</h3>
-
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4 mt-3">
+          <div className="flex items-start gap-2.5">
+            <div className="w-12 h-12 rounded-xl bg-bg-tertiary overflow-hidden border border-border-primary shrink-0">
+              <ExerciseThumb src={item.gif_url} alt={item.name} />
+            </div>
+            <div className="flex-1 grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.sets')}</span>
                 <input
@@ -318,7 +325,7 @@ const SortableRoutineItem = ({
                   }}
                   onBlur={() => onUpdate(item.tempId, {}, true)}
                   placeholder="0"
-                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -332,7 +339,7 @@ const SortableRoutineItem = ({
                   }}
                   onBlur={() => onUpdate(item.tempId, {}, true)}
                   placeholder="0"
-                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -346,7 +353,7 @@ const SortableRoutineItem = ({
                   }}
                   onBlur={() => onUpdate(item.tempId, {}, true)}
                   placeholder="0"
-                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -360,7 +367,87 @@ const SortableRoutineItem = ({
                   }}
                   onBlur={() => onUpdate(item.tempId, {}, true)}
                   placeholder="0"
-                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1 col-span-2 mt-1">
+                <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">KCAL</span>
+                <div className="h-9 rounded-lg bg-[#a3e635]/10 border border-[#a3e635]/30 text-[#a3e635] flex items-center justify-center transition-none shadow-sm">
+                  <span className="text-xs font-black tabular-nums transition-none">{Math.round(item.kcal || 0)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden sm:flex sm:items-center gap-4">
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-text-tertiary hover:text-text-primary">
+            <GripVertical className="w-5 h-5" />
+          </button>
+
+          <div className="w-16 h-16 rounded-xl bg-bg-tertiary overflow-hidden border border-border-primary shrink-0">
+            <ExerciseThumb src={item.gif_url} alt={item.name} />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-text-primary uppercase truncate">{item.name}</h3>
+
+            <div className="sm:flex sm:flex-wrap gap-4 mt-3">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.sets')}</span>
+                <input
+                  type="number"
+                  value={item.sets === 0 ? '' : item.sets}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    onUpdate(item.tempId, { sets: raw === '' ? 0 : parseInt(raw, 10) || 0 }, false);
+                  }}
+                  onBlur={() => onUpdate(item.tempId, {}, true)}
+                  placeholder="0"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.reps')}</span>
+                <input
+                  type="number"
+                  value={item.reps === 0 ? '' : item.reps}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    onUpdate(item.tempId, { reps: raw === '' ? 0 : parseInt(raw, 10) || 0 }, false);
+                  }}
+                  onBlur={() => onUpdate(item.tempId, {}, true)}
+                  placeholder="0"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.weight')}</span>
+                <input
+                  type="number"
+                  value={item.weight_kg === 0 ? '' : item.weight_kg}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    onUpdate(item.tempId, { weight_kg: raw === '' ? 0 : parseFloat(raw) || 0 }, false);
+                  }}
+                  onBlur={() => onUpdate(item.tempId, {}, true)}
+                  placeholder="0"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.rest')}</span>
+                <input
+                  type="number"
+                  value={item.rest_seconds === 0 ? '' : item.rest_seconds}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    onUpdate(item.tempId, { rest_seconds: raw === '' ? 0 : parseInt(raw, 10) || 0 }, false);
+                  }}
+                  onBlur={() => onUpdate(item.tempId, {}, true)}
+                  placeholder="0"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               <div className="flex flex-col gap-1 sm:ml-auto">
@@ -429,6 +516,8 @@ export default function WorkoutBuilder() {
   const [userWeightKg, setUserWeightKg] = useState(70);
   const [isWeightReady, setIsWeightReady] = useState(false);
 
+  const dayRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
+
   const selectedWeekKey = useMemo(() => toDateKey(selectedWeekStart), [selectedWeekStart]);
   const selectedWeekLabel = useMemo(() => {
     const end = new Date(selectedWeekStart);
@@ -468,6 +557,19 @@ export default function WorkoutBuilder() {
       setSelectedDayId(getTodayDayIndex());
     }
   }, [isCurrentWeek, selectedWeekKey]);
+
+  React.useEffect(() => {
+    if (!isLoading && dayRefs.current[selectedDayId]) {
+      const timer = setTimeout(() => {
+        dayRefs.current[selectedDayId]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedDayId, selectedWeekKey, isLoading]);
 
   // DnD Sensors
   const sensors = useSensors(
@@ -1067,7 +1169,7 @@ export default function WorkoutBuilder() {
       <div className="h-auto lg:h-[calc(100vh-80px-3rem)] overflow-visible lg:overflow-hidden min-h-0">
         <div className="h-full flex flex-col min-h-0 gap-3 lg:gap-4">
           <div className="grid min-h-0 gap-3 lg:gap-4 grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] lg:h-full pb-6 lg:pb-0">
-          <aside className="flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-visible lg:overflow-hidden min-h-0">
+          <aside className="flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-hidden min-h-0">
             <div className="p-4 border-b border-border-primary shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-[#a3e635]/10 text-[#a3e635] flex items-center justify-center shrink-0">
@@ -1117,7 +1219,7 @@ export default function WorkoutBuilder() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 md:p-4 pb-24 custom-scrollbar space-y-3 min-h-0">
+            <div className="flex-1 overflow-y-auto max-h-[200px] lg:max-h-none p-3 md:p-4 pb-3 custom-scrollbar space-y-3 min-h-0">
               {filteredExercises.map(ex => (
                 <LibraryItem key={ex.id} exercise={ex} onAdd={addExercise} />
               ))}
@@ -1163,7 +1265,7 @@ export default function WorkoutBuilder() {
                 </div>
               </div>
 
-              <div className="flex md:grid md:grid-cols-4 xl:grid-cols-7 gap-2 overflow-x-auto md:overflow-visible custom-scrollbar pb-1 md:pb-0">
+              <div className="flex md:grid md:grid-cols-4 xl:grid-cols-7 gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0 scroll-smooth snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {DAYS.map(day => (
                   (() => {
                     const dayDate = addDays(selectedWeekStart, day.id);
@@ -1172,8 +1274,9 @@ export default function WorkoutBuilder() {
                     return (
                   <button
                     key={day.id}
+                    ref={el => dayRefs.current[day.id] = el}
                     onClick={() => setSelectedDayId(day.id)}
-                    className={`min-w-[88px] md:min-w-0 w-full px-2.5 md:px-3 py-2 rounded-2xl border transition-all text-left ${selectedDayId === day.id
+                    className={`min-w-[88px] md:min-w-0 w-full px-2.5 md:px-3 py-2 rounded-2xl border transition-all text-left snap-center ${selectedDayId === day.id
                       ? 'bg-[#a3e635] text-black border-[#a3e635]'
                       : 'bg-bg-secondary text-text-secondary border-border-primary hover:border-border-secondary'
                       }`}
@@ -1226,7 +1329,7 @@ export default function WorkoutBuilder() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6 pb-24 custom-scrollbar min-h-0">
+            <div className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6 pb-3 custom-scrollbar min-h-0">
               <DayDropZone isActive={!!activeDrag}>
                 {restDays[selectedDayId] ? (
                   <div className="h-full flex flex-col items-center justify-center text-center">
