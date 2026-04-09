@@ -313,3 +313,105 @@ ALTER TABLE public.daily_exercise_sessions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Manage plans" ON public.weekly_plans FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Manage plan exercises" ON public.weekly_plan_exercises FOR ALL USING (EXISTS (SELECT 1 FROM public.weekly_plans WHERE id = weekly_plan_exercises.weekly_plan_id AND user_id = auth.uid()));
 CREATE POLICY "Manage sessions" ON public.daily_exercise_sessions FOR ALL USING (auth.uid() = user_id);
+
+---
+
+## 6. Nhóm Bảng Diet Plan
+
+### 6.1. Bảng `foods`
+Thư viện món ăn (giống `exercises` cho bài tập).
+| Tên trường | Kiểu dữ liệu | Mô tả |
+| :--- | :--- | :--- |
+| `id` | `uuid` | Khóa chính |
+| `name` | `text` | Tên món ăn |
+| `category` | `text` | Danh mục (Protein, Carbs, Veggies, Fruit, Dairy, Snack) |
+| `calories` | `numeric` | Calo / phần ăn |
+| `protein` | `numeric` | Đạm (g) |
+| `carbs` | `numeric` | Tinh bột (g) |
+| `fat` | `numeric` | Chất béo (g) |
+| `serving_unit` | `text` | Đơn vị (100g, 1 quả, 1 bát...) |
+| `image_url` | `text` | Ảnh món ăn |
+| `created_at` | `timestamptz` | Thời điểm tạo |
+
+### 6.2. Bảng `weekly_food_plans`
+Kế hoạch ăn uống theo tuần (giống `weekly_plans`).
+| Tên trường | Kiểu dữ liệu | Mô tả |
+| :--- | :--- | :--- |
+| `id` | `uuid` | Khóa chính |
+| `user_id` | `uuid` | Khóa ngoại tới `profiles.id` |
+| `name` | `text` | Tên kế hoạch |
+| `week_start_date` | `date` | Ngày bắt đầu tuần |
+| `created_at` | `timestamptz` | Thời điểm tạo |
+| `updated_at` | `timestamptz` | Cập nhật cuối |
+
+### 6.3. Bảng `weekly_food_items`
+Chi tiết món ăn trong tuần (giống `weekly_plan_exercises`).
+| Tên trường | Kiểu dữ liệu | Mô tả |
+| :--- | :--- | :--- |
+| `id` | `uuid` | Khóa chính |
+| `food_plan_id` | `uuid` | Khóa ngoại tới `weekly_food_plans.id` |
+| `day_of_week` | `int4` | Ngày trong tuần (0=T2 ... 6=CN) |
+| `meal_type` | `text` | Loại bữa (breakfast, lunch, dinner, snack) |
+| `food_id` | `uuid` | Khóa ngoại tới `foods.id` |
+| `quantity` | `numeric` | Số phần ăn |
+| `calories` | `numeric` | Calo |
+| `protein` | `numeric` | Đạm (g) |
+| `carbs` | `numeric` | Tinh bột (g) |
+| `fat` | `numeric` | Chất béo (g) |
+| `order_index` | `int4` | Thứ tự hiển thị |
+| `is_rest_day` | `boolean` | Ngày nghỉ |
+| `created_at` | `timestamptz` | Thời điểm tạo |
+
+```sql
+-- 10. Table: foods
+CREATE TABLE IF NOT EXISTS public.foods (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text NOT NULL,
+  category text,
+  calories numeric DEFAULT 0,
+  protein numeric DEFAULT 0,
+  carbs numeric DEFAULT 0,
+  fat numeric DEFAULT 0,
+  serving_unit text DEFAULT '100g',
+  image_url text,
+  created_at timestamptz DEFAULT now()
+);
+
+-- 11. Table: weekly_food_plans
+CREATE TABLE IF NOT EXISTS public.weekly_food_plans (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
+  name text DEFAULT 'Diet Plan',
+  week_start_date date,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- 12. Table: weekly_food_items
+CREATE TABLE IF NOT EXISTS public.weekly_food_items (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  food_plan_id uuid REFERENCES public.weekly_food_plans(id) ON DELETE CASCADE,
+  day_of_week int4 NOT NULL,
+  meal_type text NOT NULL,
+  food_id uuid REFERENCES public.foods(id),
+  quantity numeric DEFAULT 1,
+  calories numeric DEFAULT 0,
+  protein numeric DEFAULT 0,
+  carbs numeric DEFAULT 0,
+  fat numeric DEFAULT 0,
+  order_index int4 NOT NULL,
+  is_rest_day boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+
+-- RLS
+ALTER TABLE public.foods ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.weekly_food_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.weekly_food_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read foods" ON public.foods FOR SELECT USING (true);
+CREATE POLICY "Manage food plans" ON public.weekly_food_plans FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Manage food items" ON public.weekly_food_items FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.weekly_food_plans WHERE id = weekly_food_items.food_plan_id AND user_id = auth.uid())
+);
+```

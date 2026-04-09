@@ -5,6 +5,7 @@ import LoadingScreen from './components/LoadingScreen';
 import Dashboard from './Dashboard';
 import Overview from './Overview';
 import WorkoutBuilder from './WorkoutBuilder';
+import DietPlan from './DietPlan';
 import Exercises from './Exercises';
 import WorkoutTimer from './WorkoutTimer';
 
@@ -22,7 +23,7 @@ export default function App() {
                 <Route path="overview" element={<Overview />} />
                 <Route path="smart-planner" element={<PlaceholderPage title="Smart Planner" />} />
                 <Route path="exercises" element={<Exercises />} />
-                <Route path="diet-plan" element={<PlaceholderPage title="Diet Plan" />} />
+                <Route path="diet-plan" element={<DietPlan />} />
                 <Route path="workout-timer" element={<WorkoutTimer />} />
                 <Route path="goals" element={<PlaceholderPage title="Goals" />} />
                 <Route path="achievements" element={<PlaceholderPage title="Achievements" />} />

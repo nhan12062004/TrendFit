@@ -76,7 +76,7 @@ export default function RightPanel() {
       try {
         const { data: profile } = await supabase.from('profiles').select('birthday, gender').eq('id', user.id).maybeSingle();
         const { data: body } = await supabase.from('body_metrics').select('weight, height').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-        const { data: lifestyle } = await supabase.from('lifestyle_settings').select('daily_water_goal, activity_level, fitness_goal').eq('user_id', user.id).maybeSingle();
+        const { data: lifestyle } = await supabase.from('lifestyle_settings').select('daily_water_goal, activity_level, fitness_goal, target_calories').eq('user_id', user.id).maybeSingle();
         const { data: health } = await supabase.from('health_conditions').select('sleep_hours').eq('user_id', user.id).maybeSingle();
 
         const today = getVietnamDateKey();
@@ -115,14 +115,9 @@ export default function RightPanel() {
           });
         }
 
-        const { data: nutritionPlan } = await supabase
-          .from('nutrition_plans')
-          .select('total_calories')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (nutritionPlan) {
-          setAiTargetKcal(nutritionPlan.total_calories);
+        // Read target calories from lifestyle_settings (replaces nutrition_plans)
+        if (lifestyle?.target_calories) {
+          setAiTargetKcal(Number(lifestyle.target_calories));
         }
 
         // Today's plan should prioritize real daily sessions

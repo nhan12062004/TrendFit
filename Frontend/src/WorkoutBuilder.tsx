@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, GripVertical, Trash2, Moon, Plus, Save, Info, Loader2, Calendar, Brain, ImageOff, ChevronLeft, ChevronRight, Blocks } from 'lucide-react';
+import { Search, GripVertical, Trash2, Moon, Plus, Save, Info, Loader2, Calendar, Brain, ImageOff, ChevronLeft, ChevronRight, Blocks, X, PlusCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { supabase } from './lib/supabase';
@@ -510,6 +510,7 @@ export default function WorkoutBuilder() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeDrag, setActiveDrag] = useState<DraggingPreview | null>(null);
+  const [isMobileLibraryOpen, setIsMobileLibraryOpen] = useState(false);
   const [selectedWeekStart, setSelectedWeekStart] = useState<Date>(() => getWeekStart(getVietnamTodayDate()));
   const [supportsWeekStartDate, setSupportsWeekStartDate] = useState(true);
   const [supportsKcalColumn, setSupportsKcalColumn] = useState(true);
@@ -693,31 +694,33 @@ export default function WorkoutBuilder() {
                 const resolvedTarget = String(joined?.target_muscle || detail?.target_muscle || '');
                 const resolvedBodyPart = String(joined?.body_part || detail?.body_part || '');
 
-                grouped[day].push({
-                  tempId: item.id,
-                  exercise_id: item.exercise_id,
-                  name: resolvedName,
-                  gif_url: resolvedGif,
-                  target_muscle: resolvedTarget,
-                  sets: item.sets,
-                  reps: parseInt(String(item.reps ?? 0), 10) || 0,
-                  weight_kg: item.weight_kg,
-                  rest_seconds: item.rest_seconds,
-                  kcal: Number(item.kcal ?? estimateExerciseKcalRealistic({
-                    exercise: {
-                      target_muscle: resolvedTarget,
-                      body_part: resolvedBodyPart
-                    },
+                if (item.is_rest_day) {
+                  rest[day] = true;
+                } else {
+                  grouped[day].push({
+                    tempId: item.id,
+                    exercise_id: item.exercise_id,
+                    name: resolvedName,
+                    gif_url: resolvedGif,
+                    target_muscle: resolvedTarget,
                     sets: item.sets,
-                    repsText: String(parseInt(String(item.reps ?? 0), 10) || 0),
-                    externalLoadKg: Number(item.weight_kg || 0),
-                    userWeightKg,
-                    restSeconds: Number(item.rest_seconds || 60)
-                  })),
-                  is_rest_day: item.is_rest_day
-                });
-
-                if (item.is_rest_day) rest[day] = true;
+                    reps: parseInt(String(item.reps ?? 0), 10) || 0,
+                    weight_kg: item.weight_kg,
+                    rest_seconds: item.rest_seconds,
+                    kcal: Number(item.kcal ?? estimateExerciseKcalRealistic({
+                      exercise: {
+                        target_muscle: resolvedTarget,
+                        body_part: resolvedBodyPart
+                      },
+                      sets: item.sets,
+                      repsText: String(parseInt(String(item.reps ?? 0), 10) || 0),
+                      externalLoadKg: Number(item.weight_kg || 0),
+                      userWeightKg,
+                      restSeconds: Number(item.rest_seconds || 60)
+                    })),
+                    is_rest_day: false
+                  });
+                }
               });
 
               nextWeeklyPlan = grouped;
@@ -811,9 +814,7 @@ export default function WorkoutBuilder() {
   const toggleRestDay = () => {
     const newState = !restDays[selectedDayId];
     setRestDays(prev => ({ ...prev, [selectedDayId]: newState }));
-    if (newState) {
-      setWeeklyPlan(prev => ({ ...prev, [selectedDayId]: [] }));
-    }
+    setWeeklyPlan(prev => ({ ...prev, [selectedDayId]: [] })); // Luôn clear dữ liệu cũ khi đổi trạng thái
   };
 
   const addExerciseToDay = (ex: Exercise, dayId: number) => {
@@ -844,6 +845,7 @@ export default function WorkoutBuilder() {
       [dayId]: [...(prev[dayId] || []), newEx]
     }));
     setRestDays(prev => ({ ...prev, [dayId]: false }));
+    setIsMobileLibraryOpen(false); // Close library on mobile after adding
   };
 
   const handleDragStart = (event: any) => {
@@ -1167,30 +1169,78 @@ export default function WorkoutBuilder() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="h-auto lg:h-[calc(100vh-80px-3rem)] overflow-visible lg:overflow-hidden min-h-0">
-        <div className="h-full flex flex-col min-h-0 gap-3 lg:gap-4">
-          <div className="grid min-h-0 gap-3 lg:gap-4 grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] lg:h-full pb-6 lg:pb-0">
-            <aside className="flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-hidden min-h-0">
-              <div className="p-4 border-b border-border-primary shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-[#a3e635]/10 text-[#a3e635] flex items-center justify-center shrink-0">
-                    <Blocks className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    value={planName}
-                    onChange={(e) => setPlanName(e.target.value)}
-                    className="text-xl md:text-2xl font-black text-text-primary bg-transparent border-none outline-none focus:ring-0 w-full p-0"
-                    placeholder={workoutCreatorLabel}
-                  />
-                </div>
-                <div className="flex items-center gap-2 text-text-tertiary mt-2">
-                  <Info className="w-3.5 h-3.5 text-[#a3e635]" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest">{t('sidebar.drag_drop_hint', 'Kéo thả để thêm bài tập')}</p>
-                </div>
-              </div>
+      <div className="flex-1 w-full h-auto md:h-[calc(100vh-80px-3rem)] overflow-visible md:overflow-hidden min-h-0">
+        <div className="h-full flex flex-col min-h-0 gap-3 md:gap-4">
 
-              <div className="p-3 md:p-4 border-b border-border-primary space-y-3 shrink-0">
+          {/* ========== TOP BAR ========== */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-[#a3e635]/10 text-[#a3e635] flex items-center justify-center shrink-0">
+                <Blocks className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                value={planName}
+                onChange={(e) => setPlanName(e.target.value)}
+                className="text-lg sm:text-xl font-black text-text-primary bg-transparent border-none outline-none focus:ring-0 p-0 w-full sm:w-auto"
+                placeholder={workoutCreatorLabel}
+              />
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                onClick={() => setSelectedWeekStart(getWeekStart(getVietnamTodayDate()))}
+                disabled={isCurrentWeek}
+                className={`h-7 px-2 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all ${isCurrentWeek
+                  ? 'border-border-primary bg-bg-tertiary text-text-tertiary cursor-not-allowed opacity-60'
+                  : 'border-[#a3e635]/30 bg-[#a3e635]/10 text-[#a3e635] hover:bg-[#a3e635]/20'
+                  }`}
+              >
+                {currentLang === 'vi' ? 'Tuần này' : 'This week'}
+              </button>
+              <button onClick={goPrevWeek} className="h-7 w-7 rounded-lg border border-border-primary bg-bg-tertiary text-text-secondary hover:text-text-primary flex items-center justify-center">
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <div className="h-7 rounded-lg border border-border-primary bg-bg-tertiary px-2 flex items-center">
+                <span className="text-[9px] sm:text-[10px] font-bold text-text-secondary uppercase tracking-wide whitespace-nowrap">
+                  {selectedWeekLabel}
+                </span>
+              </div>
+              <button onClick={goNextWeek} className="h-7 w-7 rounded-lg border border-border-primary bg-bg-tertiary text-text-secondary hover:text-text-primary flex items-center justify-center">
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={savePlan}
+                disabled={isSaving}
+                className="h-7 px-3 flex items-center gap-1.5 bg-[#a3e635] text-black rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-[#bef264] transition-all disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} {t('common.save', 'Save')}
+              </button>
+            </div>
+          </div>
+
+          {/* ========== 2-COLUMN LAYOUT ========== */}
+          <div className="flex-1 w-full grid min-h-0 gap-3 md:gap-4 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)] pb-6 md:pb-0">
+            {/* ===== Mobile Overlay ===== */}
+            {isMobileLibraryOpen && (
+              <div className="fixed inset-0 bg-black/60 z-40 md:hidden animate-in fade-in" onClick={() => setIsMobileLibraryOpen(false)} />
+            )}
+
+            {/* ===== LEFT: Exercise Library ===== */}
+            <aside className={`bg-bg-secondary border border-border-primary flex-col overflow-hidden min-h-0 order-1 md:order-first z-50 md:z-0 transition-transform duration-300 md:transition-none
+              fixed md:relative bottom-3 md:bottom-0 left-3 right-3 md:left-0 md:right-0 h-[85vh] md:h-auto rounded-3xl md:rounded-3xl w-auto md:w-full
+              hidden md:flex
+              ${isMobileLibraryOpen ? '!flex translate-y-0 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]' : 'translate-y-full md:translate-y-0'}`}>
+              <div className="p-3 border-b border-border-primary shrink-0 relative">
+                {/* Mobile Close Indicator */}
+                <div className="w-12 h-1.5 bg-border-primary rounded-full mx-auto mb-3 md:hidden cursor-pointer" onClick={() => setIsMobileLibraryOpen(false)} />
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+                    {currentLang === 'vi' ? 'Thư viện bài tập' : 'Exercise Library'}
+                  </h3>
+                  <button onClick={() => setIsMobileLibraryOpen(false)} className="md:hidden w-6 h-6 rounded-full bg-bg-tertiary flex items-center justify-center text-text-tertiary">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
                   <input
@@ -1201,12 +1251,12 @@ export default function WorkoutBuilder() {
                     className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 pl-10 pr-4 text-sm focus:border-[#a3e635] outline-none transition-all text-text-primary"
                   />
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 mt-3">
                   <button
                     onClick={() => setFilterMuscle('all')}
                     className={`text-[9px] px-2 py-1 rounded-lg font-bold uppercase tracking-wider transition-all ${filterMuscle === 'all' ? 'bg-[#a3e635] text-black' : 'bg-bg-tertiary text-text-tertiary hover:text-text-primary'}`}
                   >
-                    {t('common.all', 'Tất cả')}
+                    {currentLang === 'vi' ? 'Tất cả' : 'All'}
                   </button>
                   {MUSCLE_GROUPS.map(m => (
                     <button
@@ -1220,16 +1270,16 @@ export default function WorkoutBuilder() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto max-h-[200px] lg:max-h-none p-3 md:p-4 pb-3 custom-scrollbar space-y-3 min-h-0">
+              <div className="flex-1 overflow-y-auto lg:max-h-none p-3 md:p-4 pb-8 md:pb-3 custom-scrollbar space-y-3 min-h-0">
                 {filteredExercises.map(ex => (
                   <LibraryItem key={ex.id} exercise={ex} onAdd={addExercise} />
                 ))}
               </div>
             </aside>
 
-            <section className="flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-visible lg:overflow-hidden min-h-0">
+            <section className="flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-visible lg:overflow-hidden min-h-0 order-2 md:order-last">
               <div className="p-3 md:p-4 border-b border-border-primary shrink-0">
-                <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="mb-3">
                   <h3 className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
                     {currentLang === 'vi' ? 'Lịch theo tuần' : 'Weekly schedule'}
                   </h3>
@@ -1292,12 +1342,11 @@ export default function WorkoutBuilder() {
                     <span className="truncate">{t('sidebar.rest_day')}</span>
                   </button>
                   <button
-                    onClick={savePlan}
-                    disabled={isSaving}
-                    className="h-9 flex-1 sm:flex-none sm:w-[130px] min-w-[120px] sm:min-w-0 flex items-center justify-center gap-2 px-4 md:px-5 py-2 bg-[#a3e635] text-black rounded-xl text-xs md:text-sm font-black hover:bg-[#bef264] transition-all disabled:opacity-50"
+                    onClick={() => setIsMobileLibraryOpen(true)}
+                    className="h-9 flex-1 sm:flex-none sm:w-[110px] min-w-[120px] sm:min-w-0 flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/30 hover:bg-[#a3e635]/20 md:hidden"
                   >
-                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    <span className="truncate">Save</span>
+                    <PlusCircle className="w-4 h-4" />
+                    <span className="truncate">{currentLang === 'vi' ? 'Thêm mới' : 'Add'}</span>
                   </button>
                 </div>
               </div>
@@ -1306,37 +1355,39 @@ export default function WorkoutBuilder() {
                 <DayDropZone isActive={!!activeDrag}>
                   {restDays[selectedDayId] ? (
                     <div className="h-full flex flex-col items-center justify-center text-center">
-                      <div className="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center mb-4">
-                        <Moon className="w-10 h-10 text-purple-500" />
+                      <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mb-3">
+                        <Moon className="w-8 h-8 text-purple-500" />
                       </div>
-                      <h3 className="text-xl font-black text-text-primary mb-2 uppercase">{t('sidebar.rest_day')}</h3>
+                      <h3 className="text-lg font-black text-text-primary mb-1 uppercase">{t('sidebar.rest_day')}</h3>
                       <button
                         onClick={toggleRestDay}
-                        className="mt-6 text-sm font-bold text-purple-400 hover:text-purple-300 transition-colors"
+                        className="mt-3 text-sm font-bold text-purple-400 hover:text-purple-300 transition-colors"
                       >
                         {t('workout_builder.manage_routine', 'Chuyển sang chế độ tập luyện')}
                       </button>
                     </div>
                   ) : (weeklyPlan[selectedDayId]?.length || 0) > 0 ? (
-                    <SortableContext
-                      items={(weeklyPlan[selectedDayId] || []).map(i => `plan-${i.tempId}`)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {(weeklyPlan[selectedDayId] || []).map((item) => (
-                        <SortableRoutineItem
-                          key={item.tempId}
-                          item={{ ...item, tempId: `plan-${item.tempId}` }}
-                          onDelete={(id) => deleteExercise(id.replace('plan-', ''))}
-                          onUpdate={(id, update, shouldRecalc) => updateExercise(id.replace('plan-', ''), update, shouldRecalc)}
-                        />
-                      ))}
-                    </SortableContext>
+                    <>
+                      <SortableContext
+                        items={(weeklyPlan[selectedDayId] || []).map(i => `plan-${i.tempId}`)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {(weeklyPlan[selectedDayId] || []).map((item) => (
+                          <SortableRoutineItem
+                            key={item.tempId}
+                            item={{ ...item, tempId: `plan-${item.tempId}` }}
+                            onDelete={(id) => deleteExercise(id.replace('plan-', ''))}
+                            onUpdate={(id, update, shouldRecalc) => updateExercise(id.replace('plan-', ''), update, shouldRecalc)}
+                          />
+                        ))}
+                      </SortableContext>
+                    </>
                   ) : (
-                    <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-border-primary rounded-2xl text-center group">
-                      <div className="w-16 h-16 rounded-full bg-bg-tertiary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <div className="min-h-[200px] h-full flex flex-col items-center justify-center border-2 border-dashed border-border-primary rounded-2xl text-center" onClick={() => setIsMobileLibraryOpen(true)}>
+                      <div className="w-16 h-16 rounded-full bg-bg-tertiary flex items-center justify-center mb-4 transition-transform">
                         <Brain className="w-8 h-8 text-text-tertiary" />
                       </div>
-                      <p className="text-sm text-text-tertiary max-w-[240px]">{t('workout_builder.empty_day')}</p>
+                      <p className="text-sm text-text-tertiary max-w-[240px] px-4">{t('workout_builder.empty_day')}</p>
                     </div>
                   )}
                 </DayDropZone>
