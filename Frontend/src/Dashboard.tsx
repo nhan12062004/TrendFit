@@ -13,13 +13,27 @@ export default function Dashboard() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const { isLoggedIn, hasProfile, isCheckingProfile, refreshProfile } = useAuth();
 
+  // 1. Loading state khi đang kiểm tra Profile
+  if (isCheckingProfile) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-bg-primary">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#a3e635]"></div>
+      </div>
+    );
+  }
+
+  // 2. Nếu đã đăng nhập nhưng chưa có Profile -> Bắt buộc làm Survey
+  if (isLoggedIn && !hasProfile) {
+    return (
+      <div className="h-screen w-full bg-bg-primary overflow-y-auto">
+        <SurveyForm onComplete={() => refreshProfile()} />
+      </div>
+    );
+  }
+
+  // 3. Nếu đã có Profile hoặc chưa đăng nhập (guest) -> Hiện Dashboard bình thường
   return (
     <div className="flex w-full h-screen overflow-hidden bg-bg-primary">
-      {/* Initial Setup for new users */}
-      {isLoggedIn && !isCheckingProfile && !hasProfile && (
-        <SurveyForm onComplete={() => refreshProfile()} />
-      )}
-
       {/* Profile Editor Modal */}
       <ProfileModal 
         isOpen={isProfileOpen} 

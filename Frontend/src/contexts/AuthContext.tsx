@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AuthModal from '../components/AuthModal';
+import VerificationSuccessModal from '../components/VerificationSuccessModal';
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
 
   const checkProfile = async (userId: string) => {
@@ -45,6 +47,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Kiểm tra URL hash để nhận diện xác thực email thành công
+    const handleInitialHash = () => {
+      const hash = window.location.hash;
+      const searchParams = new URLSearchParams(window.location.search);
+      
+      // Supabase thường gửi kèm access_token trong hash sau khi verify email
+      if (hash.includes('access_token=') && (hash.includes('type=signup') || hash.includes('type=recovery'))) {
+        setIsVerifying(true);
+        // Xóa hash để URL sạch hơn
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+      
+      // Hoặc kiểm tra qua query params nếu có cấu hình khác
+      if (searchParams.get('verified') === 'true') {
+        setIsVerifying(true);
+      }
+    };
+
+    handleInitialHash();
+
     // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user ?? null;
@@ -104,6 +126,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }}>
       {!loading && children}
       <AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
+      <VerificationSuccessModal 
+        isOpen={isVerifying} 
+        onClose={() => setIsVerifying(false)} 
+        onLoginClick={() => {
+          setIsVerifying(false);
+          // User thường đã được tự động đăng nhập bởi Supabase sau khi click email
+          // Nếu chưa, ta mở modal login
+          if (!user) openAuthModal();
+        }}
+      />
     </AuthContext.Provider>
   );
 }
