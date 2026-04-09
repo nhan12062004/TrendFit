@@ -25,7 +25,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// --- Types ---
+// === Types ===
 interface Exercise {
   id: string;
   name: string;
@@ -181,7 +181,7 @@ const normalizeExerciseRow = (row: any): Exercise => ({
   equipment: String(row?.equipment ?? '')
 });
 
-// --- Components ---
+// === Components ===
 const ExerciseThumb = ({ src, alt }: { src?: string; alt: string }) => {
   const candidates = useMemo(() => {
     const primary = String(src || '').trim();
@@ -516,7 +516,7 @@ export default function WorkoutBuilder() {
   const [userWeightKg, setUserWeightKg] = useState(70);
   const [isWeightReady, setIsWeightReady] = useState(false);
 
-  const dayRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
+  const dayRefs = React.useRef<Map<number, HTMLButtonElement>>(new Map());
 
   const selectedWeekKey = useMemo(() => toDateKey(selectedWeekStart), [selectedWeekStart]);
   const selectedWeekLabel = useMemo(() => {
@@ -559,9 +559,10 @@ export default function WorkoutBuilder() {
   }, [isCurrentWeek, selectedWeekKey]);
 
   React.useEffect(() => {
-    if (!isLoading && dayRefs.current[selectedDayId]) {
+    const target = dayRefs.current.get(selectedDayId);
+    if (!isLoading && target) {
       const timer = setTimeout(() => {
-        dayRefs.current[selectedDayId]?.scrollIntoView({
+        target.scrollIntoView({
           behavior: 'smooth',
           block: 'nearest',
           inline: 'center'
@@ -662,9 +663,9 @@ export default function WorkoutBuilder() {
             const rawPlanName = String(planData.name || '').trim();
             nextPlanName =
               !rawPlanName ||
-              rawPlanName === WORKOUT_CREATOR_LABEL_EN ||
-              rawPlanName === WORKOUT_CREATOR_LABEL_VI ||
-              rawPlanName.toLowerCase() === 'workout creator'
+                rawPlanName === WORKOUT_CREATOR_LABEL_EN ||
+                rawPlanName === WORKOUT_CREATOR_LABEL_VI ||
+                rawPlanName.toLowerCase() === 'workout creator'
                 ? workoutCreatorLabel
                 : rawPlanName;
 
@@ -1055,7 +1056,7 @@ export default function WorkoutBuilder() {
         }
       }
 
-      // 4.1) Sync Workout Creator -> Exercises (today only, VN timezone)
+      // 4.1) Sync Workout Creator => Exercises (today only, VN timezone)
       // Keep today's daily_exercise_sessions consistent with today's plan after Save.
       if (isCurrentWeek) {
         const vnTodayKey = getVietnamDateKey();
@@ -1169,206 +1170,209 @@ export default function WorkoutBuilder() {
       <div className="h-auto lg:h-[calc(100vh-80px-3rem)] overflow-visible lg:overflow-hidden min-h-0">
         <div className="h-full flex flex-col min-h-0 gap-3 lg:gap-4">
           <div className="grid min-h-0 gap-3 lg:gap-4 grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] lg:h-full pb-6 lg:pb-0">
-          <aside className="flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-hidden min-h-0">
-            <div className="p-4 border-b border-border-primary shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#a3e635]/10 text-[#a3e635] flex items-center justify-center shrink-0">
-                  <Blocks className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  value={planName}
-                  onChange={(e) => setPlanName(e.target.value)}
-                  className="text-xl md:text-2xl font-black text-text-primary bg-transparent border-none outline-none focus:ring-0 w-full p-0"
-                  placeholder={workoutCreatorLabel}
-                />
-              </div>
-              <div className="flex items-center gap-2 text-text-tertiary mt-2">
-                <Info className="w-3.5 h-3.5 text-[#a3e635]" />
-                <p className="text-[10px] font-bold uppercase tracking-widest">{t('sidebar.drag_drop_hint', 'Kéo thả để thêm bài tập')}</p>
-              </div>
-            </div>
-
-            <div className="p-3 md:p-4 border-b border-border-primary space-y-3 shrink-0">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
-                <input
-                  type="text"
-                  placeholder={t('sidebar.search_exercises')}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 pl-10 pr-4 text-sm focus:border-[#a3e635] outline-none transition-all text-text-primary"
-                />
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  onClick={() => setFilterMuscle('all')}
-                  className={`text-[9px] px-2 py-1 rounded-lg font-bold uppercase tracking-wider transition-all ${filterMuscle === 'all' ? 'bg-[#a3e635] text-black' : 'bg-bg-tertiary text-text-tertiary hover:text-text-primary'}`}
-                >
-                  {t('common.all', 'Tất cả')}
-                </button>
-                {MUSCLE_GROUPS.map(m => (
-                  <button
-                    key={m}
-                    onClick={() => setFilterMuscle(m)}
-                    className={`text-[9px] px-2 py-1 rounded-lg font-bold uppercase tracking-wider transition-all ${filterMuscle === m ? 'bg-[#a3e635] text-black' : 'bg-bg-tertiary text-text-tertiary hover:text-text-primary'}`}
-                  >
-                    {t(`sidebar.muscle_groups.${m}`, m)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto max-h-[200px] lg:max-h-none p-3 md:p-4 pb-3 custom-scrollbar space-y-3 min-h-0">
-              {filteredExercises.map(ex => (
-                <LibraryItem key={ex.id} exercise={ex} onAdd={addExercise} />
-              ))}
-            </div>
-          </aside>
-
-          <section className="flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-visible lg:overflow-hidden min-h-0">
-            <div className="p-3 md:p-4 border-b border-border-primary shrink-0">
-              <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
-                  {currentLang === 'vi' ? 'Lịch theo tuần' : 'Weekly schedule'}
-                </h3>
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                  <button
-                    onClick={() => setSelectedWeekStart(getWeekStart(getVietnamTodayDate()))}
-                    disabled={isCurrentWeek}
-                    className={`h-8 px-2 sm:px-2.5 rounded-lg border text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all ${isCurrentWeek
-                      ? 'border-border-primary bg-bg-tertiary text-text-tertiary cursor-not-allowed opacity-60'
-                      : 'border-[#a3e635]/30 bg-[#a3e635]/10 text-[#a3e635] hover:bg-[#a3e635]/20'
-                      }`}
-                  >
-                    {currentLang === 'vi' ? 'Tuần hiện tại' : 'Current week'}
-                  </button>
-                  <button
-                    onClick={goPrevWeek}
-                    className="h-8 w-8 rounded-lg border border-border-primary bg-bg-tertiary text-text-secondary hover:text-text-primary flex items-center justify-center"
-                    aria-label="Previous week"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <div className="h-8 rounded-lg border border-border-primary bg-bg-tertiary px-2.5 sm:px-3 flex items-center justify-center">
-                    <span className="text-[10px] sm:text-[11px] font-bold text-text-secondary uppercase tracking-wide whitespace-nowrap">
-                      {selectedWeekLabel}
-                    </span>
+            <aside className="flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-hidden min-h-0">
+              <div className="p-4 border-b border-border-primary shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[#a3e635]/10 text-[#a3e635] flex items-center justify-center shrink-0">
+                    <Blocks className="w-4 h-4" />
                   </div>
-                  <button
-                    onClick={goNextWeek}
-                    className="h-8 w-8 rounded-lg border border-border-primary bg-bg-tertiary text-text-secondary hover:text-text-primary flex items-center justify-center"
-                    aria-label="Next week"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                  <input
+                    type="text"
+                    value={planName}
+                    onChange={(e) => setPlanName(e.target.value)}
+                    className="text-xl md:text-2xl font-black text-text-primary bg-transparent border-none outline-none focus:ring-0 w-full p-0"
+                    placeholder={workoutCreatorLabel}
+                  />
+                </div>
+                <div className="flex items-center gap-2 text-text-tertiary mt-2">
+                  <Info className="w-3.5 h-3.5 text-[#a3e635]" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest">{t('sidebar.drag_drop_hint', 'Kéo thả để thêm bài tập')}</p>
                 </div>
               </div>
 
-              <div className="flex md:grid md:grid-cols-4 xl:grid-cols-7 gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0 scroll-smooth snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                {DAYS.map(day => (
-                  (() => {
-                    const dayDate = addDays(selectedWeekStart, day.id);
-                    const dayDateKey = toDateKey(dayDate);
-                    const isToday = dayDateKey === todayKey;
-                    return (
+              <div className="p-3 md:p-4 border-b border-border-primary space-y-3 shrink-0">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+                  <input
+                    type="text"
+                    placeholder={t('sidebar.search_exercises')}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 pl-10 pr-4 text-sm focus:border-[#a3e635] outline-none transition-all text-text-primary"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1.5">
                   <button
-                    key={day.id}
-                    ref={el => dayRefs.current[day.id] = el}
-                    onClick={() => setSelectedDayId(day.id)}
-                    className={`min-w-[88px] md:min-w-0 w-full px-2.5 md:px-3 py-2 rounded-2xl border transition-all text-left snap-center ${selectedDayId === day.id
-                      ? 'bg-[#a3e635] text-black border-[#a3e635]'
-                      : 'bg-bg-secondary text-text-secondary border-border-primary hover:border-border-secondary'
-                      }`}
+                    onClick={() => setFilterMuscle('all')}
+                    className={`text-[9px] px-2 py-1 rounded-lg font-bold uppercase tracking-wider transition-all ${filterMuscle === 'all' ? 'bg-[#a3e635] text-black' : 'bg-bg-tertiary text-text-tertiary hover:text-text-primary'}`}
                   >
-                    <span className={`text-xs font-black uppercase tracking-widest ${selectedDayId === day.id ? 'text-black' : 'text-text-tertiary'}`}>
-                      {currentLang === 'vi' ? day.label_vi : day.label_en}
-                    </span>
-                    <div className={`text-[10px] font-bold mt-0.5 ${selectedDayId === day.id ? 'text-black/70' : isToday ? 'text-[#a3e635]' : 'text-text-tertiary'}`}>
-                      {dayDate.toLocaleDateString(currentLang, { day: '2-digit', month: '2-digit' })}
-                    </div>
-                    <div className="mt-1 text-[9px] font-black uppercase">
-                      {restDays[day.id] ? t('sidebar.rest_day') : `${weeklyPlan[day.id]?.length || 0} ${t('dashboard.exercise', 'Bài tập')}`}
-                    </div>
+                    {t('common.all', 'Tất cả')}
                   </button>
-                    );
-                  })()
+                  {MUSCLE_GROUPS.map(m => (
+                    <button
+                      key={m}
+                      onClick={() => setFilterMuscle(m)}
+                      className={`text-[9px] px-2 py-1 rounded-lg font-bold uppercase tracking-wider transition-all ${filterMuscle === m ? 'bg-[#a3e635] text-black' : 'bg-bg-tertiary text-text-tertiary hover:text-text-primary'}`}
+                    >
+                      {t(`sidebar.muscle_groups.${m}`, m)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto max-h-[200px] lg:max-h-none p-3 md:p-4 pb-3 custom-scrollbar space-y-3 min-h-0">
+                {filteredExercises.map(ex => (
+                  <LibraryItem key={ex.id} exercise={ex} onAdd={addExercise} />
                 ))}
               </div>
-            </div>
+            </aside>
 
-            <div className="p-3 md:p-4 border-b border-border-primary grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-[#a3e635]/10 flex items-center justify-center text-[#a3e635]">
-                  <Calendar className="w-5 h-5" />
-                </div>
-                <h2 className="text-base md:text-lg font-black text-text-primary tracking-tight truncate">
-                  {currentLang === 'vi' ? DAYS[selectedDayId].label_vi : DAYS[selectedDayId].label_en}
-                </h2>
-              </div>
-
-              <div className="flex items-center gap-2 justify-end flex-wrap sm:flex-nowrap w-full sm:w-auto">
-                <button
-                  onClick={toggleRestDay}
-                  className={`h-9 flex-1 sm:flex-none sm:w-[110px] min-w-[120px] sm:min-w-0 flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${restDays[selectedDayId]
-                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                    : 'bg-bg-tertiary text-text-tertiary border border-border-primary hover:text-text-primary'
-                    }`}
-                >
-                  <Moon className="w-4 h-4" />
-                  <span className="truncate">{t('sidebar.rest_day')}</span>
-                </button>
-                <button
-                  onClick={savePlan}
-                  disabled={isSaving}
-                  className="h-9 flex-1 sm:flex-none sm:w-[130px] min-w-[120px] sm:min-w-0 flex items-center justify-center gap-2 px-4 md:px-5 py-2 bg-[#a3e635] text-black rounded-xl text-xs md:text-sm font-black hover:bg-[#bef264] transition-all disabled:opacity-50"
-                >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span className="truncate">Save</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6 pb-3 custom-scrollbar min-h-0">
-              <DayDropZone isActive={!!activeDrag}>
-                {restDays[selectedDayId] ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center">
-                    <div className="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center mb-4">
-                      <Moon className="w-10 h-10 text-purple-500" />
-                    </div>
-                    <h3 className="text-xl font-black text-text-primary mb-2 uppercase">{t('sidebar.rest_day')}</h3>
+            <section className="flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-visible lg:overflow-hidden min-h-0">
+              <div className="p-3 md:p-4 border-b border-border-primary shrink-0">
+                <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <h3 className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+                    {currentLang === 'vi' ? 'Lịch theo tuần' : 'Weekly schedule'}
+                  </h3>
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     <button
-                      onClick={toggleRestDay}
-                      className="mt-6 text-sm font-bold text-purple-400 hover:text-purple-300 transition-colors"
+                      onClick={() => setSelectedWeekStart(getWeekStart(getVietnamTodayDate()))}
+                      disabled={isCurrentWeek}
+                      className={`h-8 px-2 sm:px-2.5 rounded-lg border text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all ${isCurrentWeek
+                        ? 'border-border-primary bg-bg-tertiary text-text-tertiary cursor-not-allowed opacity-60'
+                        : 'border-[#a3e635]/30 bg-[#a3e635]/10 text-[#a3e635] hover:bg-[#a3e635]/20'
+                        }`}
                     >
-                      {t('workout_builder.manage_routine', 'Chuyển sang chế độ tập luyện')}
+                      {currentLang === 'vi' ? 'Tuần hiện tại' : 'Current week'}
+                    </button>
+                    <button
+                      onClick={goPrevWeek}
+                      className="h-8 w-8 rounded-lg border border-border-primary bg-bg-tertiary text-text-secondary hover:text-text-primary flex items-center justify-center"
+                      aria-label="Previous week"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <div className="h-8 rounded-lg border border-border-primary bg-bg-tertiary px-2.5 sm:px-3 flex items-center justify-center">
+                      <span className="text-[10px] sm:text-[11px] font-bold text-text-secondary uppercase tracking-wide whitespace-nowrap">
+                        {selectedWeekLabel}
+                      </span>
+                    </div>
+                    <button
+                      onClick={goNextWeek}
+                      className="h-8 w-8 rounded-lg border border-border-primary bg-bg-tertiary text-text-secondary hover:text-text-primary flex items-center justify-center"
+                      aria-label="Next week"
+                    >
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
-                ) : (weeklyPlan[selectedDayId]?.length || 0) > 0 ? (
-                  <SortableContext
-                    items={(weeklyPlan[selectedDayId] || []).map(i => `plan-${i.tempId}`)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {(weeklyPlan[selectedDayId] || []).map((item) => (
-                      <SortableRoutineItem
-                        key={item.tempId}
-                        item={{ ...item, tempId: `plan-${item.tempId}` }}
-                        onDelete={(id) => deleteExercise(id.replace('plan-', ''))}
-                        onUpdate={(id, update, shouldRecalc) => updateExercise(id.replace('plan-', ''), update, shouldRecalc)}
-                      />
-                    ))}
-                  </SortableContext>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-border-primary rounded-2xl text-center group">
-                    <div className="w-16 h-16 rounded-full bg-bg-tertiary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <Brain className="w-8 h-8 text-text-tertiary" />
-                    </div>
-                    <p className="text-sm text-text-tertiary max-w-[240px]">{t('workout_builder.empty_day')}</p>
+                </div>
+
+                <div className="flex md:grid md:grid-cols-4 xl:grid-cols-7 gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0 scroll-smooth snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  {DAYS.map(day => (
+                    (() => {
+                      const dayDate = addDays(selectedWeekStart, day.id);
+                      const dayDateKey = toDateKey(dayDate);
+                      const isToday = dayDateKey === todayKey;
+                      return (
+                        <button
+                          key={day.id}
+                          ref={el => {
+                            if (el) dayRefs.current.set(day.id, el);
+                            else dayRefs.current.delete(day.id);
+                          }}
+                          onClick={() => setSelectedDayId(day.id)}
+                          className={`min-w-[88px] md:min-w-0 w-full px-2.5 md:px-3 py-2 rounded-2xl border transition-all text-left snap-center ${selectedDayId === day.id
+                            ? 'bg-[#a3e635] text-black border-[#a3e635]'
+                            : 'bg-bg-secondary text-text-secondary border-border-primary hover:border-border-secondary'
+                            }`}
+                        >
+                          <span className={`text-xs font-black uppercase tracking-widest ${selectedDayId === day.id ? 'text-black' : 'text-text-tertiary'}`}>
+                            {currentLang === 'vi' ? day.label_vi : day.label_en}
+                          </span>
+                          <div className={`text-[10px] font-bold mt-0.5 ${selectedDayId === day.id ? 'text-black/70' : isToday ? 'text-[#a3e635]' : 'text-text-tertiary'}`}>
+                            {dayDate.toLocaleDateString(currentLang, { day: '2-digit', month: '2-digit' })}
+                          </div>
+                          <div className="mt-1 text-[9px] font-black uppercase">
+                            {restDays[day.id] ? t('sidebar.rest_day') : `${weeklyPlan[day.id]?.length || 0} ${t('dashboard.exercise', 'Bài tập')}`}
+                          </div>
+                        </button>
+                      );
+                    })()
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3 md:p-4 border-b border-border-primary grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-[#a3e635]/10 flex items-center justify-center text-[#a3e635]">
+                    <Calendar className="w-5 h-5" />
                   </div>
-                )}
-              </DayDropZone>
-            </div>
-          </section>
+                  <h2 className="text-base md:text-lg font-black text-text-primary tracking-tight truncate">
+                    {currentLang === 'vi' ? DAYS[selectedDayId].label_vi : DAYS[selectedDayId].label_en}
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-2 justify-end flex-wrap sm:flex-nowrap w-full sm:w-auto">
+                  <button
+                    onClick={toggleRestDay}
+                    className={`h-9 flex-1 sm:flex-none sm:w-[110px] min-w-[120px] sm:min-w-0 flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${restDays[selectedDayId]
+                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                      : 'bg-bg-tertiary text-text-tertiary border border-border-primary hover:text-text-primary'
+                      }`}
+                  >
+                    <Moon className="w-4 h-4" />
+                    <span className="truncate">{t('sidebar.rest_day')}</span>
+                  </button>
+                  <button
+                    onClick={savePlan}
+                    disabled={isSaving}
+                    className="h-9 flex-1 sm:flex-none sm:w-[130px] min-w-[120px] sm:min-w-0 flex items-center justify-center gap-2 px-4 md:px-5 py-2 bg-[#a3e635] text-black rounded-xl text-xs md:text-sm font-black hover:bg-[#bef264] transition-all disabled:opacity-50"
+                  >
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    <span className="truncate">Save</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6 pb-3 custom-scrollbar min-h-0">
+                <DayDropZone isActive={!!activeDrag}>
+                  {restDays[selectedDayId] ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center">
+                      <div className="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center mb-4">
+                        <Moon className="w-10 h-10 text-purple-500" />
+                      </div>
+                      <h3 className="text-xl font-black text-text-primary mb-2 uppercase">{t('sidebar.rest_day')}</h3>
+                      <button
+                        onClick={toggleRestDay}
+                        className="mt-6 text-sm font-bold text-purple-400 hover:text-purple-300 transition-colors"
+                      >
+                        {t('workout_builder.manage_routine', 'Chuyển sang chế độ tập luyện')}
+                      </button>
+                    </div>
+                  ) : (weeklyPlan[selectedDayId]?.length || 0) > 0 ? (
+                    <SortableContext
+                      items={(weeklyPlan[selectedDayId] || []).map(i => `plan-${i.tempId}`)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {(weeklyPlan[selectedDayId] || []).map((item) => (
+                        <SortableRoutineItem
+                          key={item.tempId}
+                          item={{ ...item, tempId: `plan-${item.tempId}` }}
+                          onDelete={(id) => deleteExercise(id.replace('plan-', ''))}
+                          onUpdate={(id, update, shouldRecalc) => updateExercise(id.replace('plan-', ''), update, shouldRecalc)}
+                        />
+                      ))}
+                    </SortableContext>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-border-primary rounded-2xl text-center group">
+                      <div className="w-16 h-16 rounded-full bg-bg-tertiary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <Brain className="w-8 h-8 text-text-tertiary" />
+                      </div>
+                      <p className="text-sm text-text-tertiary max-w-[240px]">{t('workout_builder.empty_day')}</p>
+                    </div>
+                  )}
+                </DayDropZone>
+              </div>
+            </section>
           </div>
         </div>
       </div>
