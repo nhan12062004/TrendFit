@@ -28,7 +28,7 @@ interface SurveyFormProps {
 }
 
 export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormProps) {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [isPreloading, setIsPreloading] = useState(false);
@@ -260,6 +260,7 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
         throw firstError;
       }
 
+      await refreshProfile();
       onComplete();
     } catch (err: any) {
       console.error('Error saving multi-table profile:', err);

@@ -11,7 +11,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
   onProfileClick?: () => void,
   onPasswordClick?: () => void 
 }) {
-  const { isLoggedIn, signOut, user, openAuthModal, isAdmin, profile, refreshProfile } = useAuth();
+  const { isLoggedIn, signOut, user, openAuthModal, isAdmin, profile, refreshProfile, refreshTick } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const { t } = useTranslation();
@@ -40,7 +40,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
 
   useEffect(() => {
     if (isLoggedIn) fetchWater();
-  }, [isLoggedIn, user]);
+  }, [isLoggedIn, user, refreshTick]);
 
   const menuItems = [
     { icon: Home, label: t('sidebar.overview', 'Tổng quan'), path: '/overview' },
