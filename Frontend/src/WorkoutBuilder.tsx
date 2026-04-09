@@ -1233,37 +1233,6 @@ export default function WorkoutBuilder() {
                   <h3 className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
                     {currentLang === 'vi' ? 'Lịch theo tuần' : 'Weekly schedule'}
                   </h3>
-                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                    <button
-                      onClick={() => setSelectedWeekStart(getWeekStart(getVietnamTodayDate()))}
-                      disabled={isCurrentWeek}
-                      className={`h-8 px-2 sm:px-2.5 rounded-lg border text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all ${isCurrentWeek
-                        ? 'border-border-primary bg-bg-tertiary text-text-tertiary cursor-not-allowed opacity-60'
-                        : 'border-[#a3e635]/30 bg-[#a3e635]/10 text-[#a3e635] hover:bg-[#a3e635]/20'
-                        }`}
-                    >
-                      {currentLang === 'vi' ? 'Tuần hiện tại' : 'Current week'}
-                    </button>
-                    <button
-                      onClick={goPrevWeek}
-                      className="h-8 w-8 rounded-lg border border-border-primary bg-bg-tertiary text-text-secondary hover:text-text-primary flex items-center justify-center"
-                      aria-label="Previous week"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <div className="h-8 rounded-lg border border-border-primary bg-bg-tertiary px-2.5 sm:px-3 flex items-center justify-center">
-                      <span className="text-[10px] sm:text-[11px] font-bold text-text-secondary uppercase tracking-wide whitespace-nowrap">
-                        {selectedWeekLabel}
-                      </span>
-                    </div>
-                    <button
-                      onClick={goNextWeek}
-                      className="h-8 w-8 rounded-lg border border-border-primary bg-bg-tertiary text-text-secondary hover:text-text-primary flex items-center justify-center"
-                      aria-label="Next week"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
                 </div>
 
                 <div className="flex md:grid md:grid-cols-4 xl:grid-cols-7 gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0 scroll-smooth snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
