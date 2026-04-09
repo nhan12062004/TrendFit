@@ -26,6 +26,30 @@ export default function RightPanel() {
   const [sleepHours, setSleepHours] = useState({ actual: 0, target: 0 });
   const [aiTargetKcal, setAiTargetKcal] = useState<number | null>(null);
 
+  const parseReps = (reps: string | null | undefined): number => {
+    if (!reps) return 10;
+    const nums = String(reps).match(/\d+/g)?.map(Number).filter(n => !Number.isNaN(n)) || [];
+    if (nums.length === 0) return 10;
+    if (nums.length === 1) return nums[0];
+    return Math.round((nums[0] + nums[nums.length - 1]) / 2);
+  };
+
+  const estimateExerciseKcal = (
+    item: { sets?: number | null; reps?: string | null; weight_kg?: number | null; rest_seconds?: number | null },
+    userWeightKg: number
+  ): number => {
+    const sets = Math.max(1, Number(item.sets || 0));
+    const reps = Math.max(1, parseReps(item.reps));
+    const rest = Math.max(0, Number(item.rest_seconds || 0));
+    const weightKg = Math.max(0, Number(item.weight_kg || 0));
+    const workSeconds = sets * reps * 2.8;
+    const restSeconds = Math.max(0, sets - 1) * rest;
+    const durationMinutes = Math.max(1, (workSeconds + restSeconds) / 60);
+    const met = weightKg > 0 ? 6.0 : 5.0;
+    const kcal = (met * 3.5 * Math.max(45, userWeightKg) / 200) * durationMinutes;
+    return Math.round(Math.min(250, Math.max(8, kcal)));
+  };
+
   useEffect(() => {
     async function fetchMetrics() {
       if (!user) return;
@@ -81,23 +105,64 @@ export default function RightPanel() {
           setAiTargetKcal(nutritionPlan.total_calories);
         }
 
-        const { data: workoutRec } = await supabase
-          .from('ai_recommendations')
-          .select('recommendation_content')
+        // Today's plan should prioritize real daily sessions
+        const { data: todaySessions } = await supabase
+          .from('daily_exercise_sessions')
+          .select(`
+            id,
+            sets,
+            reps,
+            weight_kg,
+            rest_seconds,
+            is_completed,
+            exercises:exercise_id (name, gif_url)
+          `)
           .eq('user_id', user.id)
-          .eq('plan_type', 'workout')
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .eq('log_date', today)
+          .order('order_index', { ascending: true });
 
-        if (workoutRec?.recommendation_content) {
-          try {
-            const content = typeof workoutRec.recommendation_content === 'string'
-              ? JSON.parse(workoutRec.recommendation_content)
-              : workoutRec.recommendation_content;
-            setTodayWorkouts(Array.isArray(content) ? content : []);
-          } catch {
+        if (todaySessions && todaySessions.length > 0) {
+          const mapped = todaySessions.map((s: any) => {
+            const exerciseName = (s.exercises as any)?.name || 'Exercise';
+            const gif = (s.exercises as any)?.gif_url || '';
+            return {
+              img: gif,
+              title: exerciseName,
+              desc: `${s.sets || 0} sets • ${s.reps || '-'} reps • ${s.weight_kg || 0} kg`,
+              progress: s.is_completed ? 100 : 0
+            };
+          });
+          setTodayWorkouts(mapped);
+
+          // Fallback kcal for panel if daily log not filled yet
+          if (!log?.calories_consumed) {
+            const userWeight = Number(body?.weight || 70);
+            const estimatedKcal = todaySessions
+              .filter((s: any) => !!s.is_completed)
+              .reduce((sum: number, s: any) => sum + estimateExerciseKcal(s, userWeight), 0);
+            setConsumedKcal(estimatedKcal);
+          }
+        } else {
+          const { data: workoutRec } = await supabase
+            .from('ai_recommendations')
+            .select('recommendation_content')
+            .eq('user_id', user.id)
+            .eq('plan_type', 'workout')
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (workoutRec?.recommendation_content) {
+            try {
+              const content = typeof workoutRec.recommendation_content === 'string'
+                ? JSON.parse(workoutRec.recommendation_content)
+                : workoutRec.recommendation_content;
+              setTodayWorkouts(Array.isArray(content) ? content : []);
+            } catch {
+              setTodayWorkouts([]);
+            }
+          } else {
             setTodayWorkouts([]);
           }
         }

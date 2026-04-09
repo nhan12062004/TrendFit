@@ -4,6 +4,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import LoadingScreen from './components/LoadingScreen';
 import Dashboard from './Dashboard';
 import Overview from './Overview';
+import WorkoutBuilder from './WorkoutBuilder';
+import Exercises from './Exercises';
+import WorkoutTimer from './WorkoutTimer';
 
 const PlaceholderPage = lazy(() => import('./PlaceholderPage'));
 
@@ -18,12 +21,12 @@ export default function App() {
                 <Route index element={<Navigate to="/overview" replace />} />
                 <Route path="overview" element={<Overview />} />
                 <Route path="smart-planner" element={<PlaceholderPage title="Smart Planner" />} />
-                <Route path="exercises" element={<PlaceholderPage title="Exercises" />} />
+                <Route path="exercises" element={<Exercises />} />
                 <Route path="diet-plan" element={<PlaceholderPage title="Diet Plan" />} />
-                <Route path="workout-timer" element={<PlaceholderPage title="Workout Timer" />} />
+                <Route path="workout-timer" element={<WorkoutTimer />} />
                 <Route path="goals" element={<PlaceholderPage title="Goals" />} />
                 <Route path="achievements" element={<PlaceholderPage title="Achievements" />} />
-                <Route path="workout-builder" element={<PlaceholderPage title="Workout Builder" />} />
+                <Route path="workout-builder" element={<WorkoutBuilder />} />
                 <Route path="progress" element={<PlaceholderPage title="Progress" />} />
                 <Route path="admin-panel" element={<PlaceholderPage title="Admin Panel" />} />
               </Route>

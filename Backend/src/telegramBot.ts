@@ -18,6 +18,7 @@ const WATER_MESSAGES = [
   "🥤 Chào buổi tối! Đừng quên ly nước cuối ngày để thanh lọc cơ thể nhé. 🌙",
   "💧 Một ly nước nhẹ nhàng trước khi ngủ nhé! Chúc bạn có giấc ngủ ngon. 🌙💤"
 ];
+const WATER_PER_CONFIRM_ML = 250;
 
 const setupDailyReminders = (bot: TelegramBot) => {
   // 1. Nhắc uống nước (nhiều khung giờ)
@@ -37,7 +38,13 @@ const setupDailyReminders = (bot: TelegramBot) => {
           const message = WATER_MESSAGES[index % WATER_MESSAGES.length];
           for (const user of users) {
              const personalizedMessage = `Chào ${user.full_name || 'bạn'}! ${message}`;
-             await bot.sendMessage(user.telegram_chat_id, personalizedMessage);
+             await bot.sendMessage(user.telegram_chat_id, personalizedMessage, {
+               reply_markup: {
+                 inline_keyboard: [
+                   [{ text: '✅ Đã uống', callback_data: 'water_done' }]
+                 ]
+               }
+             });
           }
         }
       } catch (err: any) {
@@ -91,6 +98,63 @@ const setupDailyReminders = (bot: TelegramBot) => {
     const data = query.data;
 
     if (!chatId || !data) return;
+
+    if (data === 'water_done') {
+      const today = new Date().toISOString().split('T')[0];
+
+      try {
+        const { data: userProfile, error: userError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('telegram_chat_id', chatId.toString())
+          .single();
+
+        if (userError) throw userError;
+
+        if (!userProfile) {
+          await bot.answerCallbackQuery(query.id, { text: 'Không tìm thấy tài khoản liên kết.' });
+          return;
+        }
+
+        const { data: existingLog, error: existingLogError } = await supabase
+          .from('daily_progress_logs')
+          .select('water_intake_ml')
+          .eq('user_id', userProfile.id)
+          .eq('log_date', today)
+          .maybeSingle();
+
+        if (existingLogError) throw existingLogError;
+
+        const nextWaterIntakeMl = (existingLog?.water_intake_ml || 0) + WATER_PER_CONFIRM_ML;
+
+        const { error: saveError } = await supabase
+          .from('daily_progress_logs')
+          .upsert({
+            user_id: userProfile.id,
+            log_date: today,
+            water_intake_ml: nextWaterIntakeMl
+          }, { onConflict: 'user_id,log_date' });
+
+        if (saveError) throw saveError;
+
+        await bot.answerCallbackQuery(query.id, {
+          text: `Đã ghi nhận +${WATER_PER_CONFIRM_ML}ml nước!`
+        });
+
+        await bot.editMessageReplyMarkup(
+          { inline_keyboard: [] },
+          {
+            chat_id: chatId,
+            message_id: query.message?.message_id
+          }
+        );
+      } catch (err: any) {
+        console.error('❌ Lỗi lưu nước uống:', err.message);
+        await bot.answerCallbackQuery(query.id, { text: 'Có lỗi khi lưu dữ liệu.' });
+      }
+
+      return;
+    }
 
     if (data.startsWith('sleep_')) {
       const hours = parseInt(data.replace('sleep_', ''));

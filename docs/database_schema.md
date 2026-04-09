@@ -266,3 +266,50 @@ CREATE TABLE public.workout_feedback (
   created_at timestamptz DEFAULT now()
 );
 ```
+-- Chạy đoạn này để tạo đủ 3 bảng cần thiết
+CREATE TABLE IF NOT EXISTS public.weekly_plans (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
+  name text DEFAULT 'Workout Creator',
+  description text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.weekly_plan_exercises (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  weekly_plan_id uuid REFERENCES public.weekly_plans(id) ON DELETE CASCADE,
+  day_of_week int4 NOT NULL,
+  exercise_id text REFERENCES public.exercises(id),
+  sets int4 DEFAULT 3,
+  reps text DEFAULT '10-12',
+  weight_kg numeric DEFAULT 0,
+  rest_seconds int4 DEFAULT 60,
+  order_index int4 NOT NULL,
+  is_rest_day boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.daily_exercise_sessions (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
+  log_date date DEFAULT CURRENT_DATE,
+  exercise_id text REFERENCES public.exercises(id),
+  sets int4 DEFAULT 3,
+  reps text DEFAULT '10-12',
+  weight_kg numeric DEFAULT 0,
+  rest_seconds int4 DEFAULT 60,
+  order_index int4,
+  is_completed boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Bật bảo mật RLS
+ALTER TABLE public.weekly_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.weekly_plan_exercises ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.daily_exercise_sessions ENABLE ROW LEVEL SECURITY;
+
+-- Cấp quyền truy cập cho người dùng (chỉ được xem/sửa dữ liệu của chính mình)
+CREATE POLICY "Manage plans" ON public.weekly_plans FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Manage plan exercises" ON public.weekly_plan_exercises FOR ALL USING (EXISTS (SELECT 1 FROM public.weekly_plans WHERE id = weekly_plan_exercises.weekly_plan_id AND user_id = auth.uid()));
+CREATE POLICY "Manage sessions" ON public.daily_exercise_sessions FOR ALL USING (auth.uid() = user_id);

@@ -12,6 +12,8 @@
     "fitness_member": "Thành viên Fitness",
     "login": "Đăng nhập",
     "new": "Mới",
+    "today": "Hôm nay",
+    "add_new": "Thêm mới",
     "error": "Lỗi: ",
     "member": "Thành viên"
   },
@@ -35,7 +37,30 @@
     "unlink": "Hủy liên kết",
     "connect_tg": "Kết nối Telegram Bot",
     "streak_days": "ngày liên tiếp",
-    "extra_cup": "Cốc uống thêm"
+    "extra_cup": "Cốc uống thêm",
+    "workout_creator": "Workout Creator",
+    "drag_drop_hint": "Kéo thả bài tập để thêm vào lịch",
+    "copy_day": "Sao chép từ ngày khác",
+    "rest_day": "Ngày nghỉ",
+    "search_exercises": "Tìm kiếm bài tập...",
+    "muscle_groups": {
+      "all": "Tất cả",
+      "chest": "Ngực",
+      "back": "Lưng",
+      "legs": "Chân",
+      "shoulders": "Vai",
+      "arms": "Tay",
+      "abs": "Cơ bụng",
+      "cardio": "Tim mạch"
+    },
+    "save_plan": "Lưu lịch tập",
+    "add_exercise": "Thêm bài tập",
+    "today_routine": "Bài tập hôm nay",
+    "no_schedule_today": "Hôm nay không có lịch tập nào.",
+    "start_session": "Bắt đầu buổi tập hôm nay",
+    "finish_session": "Hoàn thành buổi tập",
+    "exercise_added_today": "Đã thêm vào buổi tập hôm nay",
+    "exercise_removed_today": "Đã xóa khỏi buổi tập hôm nay"
   },
   "topbar": {
     "search_placeholder": "Tìm kiếm bài tập, thực đơn,..."
@@ -276,9 +301,22 @@
     "all": "Mọi cấp độ"
   },
   "services": {
-    "workout_program": "CHƯƠNG TRÌNH TẬP LUYỆN",
-    "nutrition_plan": "KẾ HOẠCH DINH DƯỠNG",
-    "practice_time": "THỜI GIAN THỰC HÀNH",
-    "diet_program": "CHƯƠNG TRÌNH ĂN KIÊNG"
+    "workout_program": "WORKOUT PROGRAM",
+    "nutrition_plan": "NUTRITION PLAN",
+    "practice_time": "PRACTICE TIME",
+    "diet_program": "DIET PROGRAM"
+  },
+  "workout_builder": {
+    "title": "Workout Creator",
+    "select_day": "Chọn ngày",
+    "manage_routine": "Quản lý bài tập",
+    "empty_day": "Ngày này chưa có bài tập nào. Hãy kéo thả từ thư viện!",
+    "copy_success": "Đã sao chép bài tập thành công!",
+    "save_success": "Đã lưu lịch tập thành công!",
+    "loading": "Đang tải dữ liệu...",
+    "sets": "Hiệp",
+    "reps": "Lần",
+    "weight": "KG",
+    "rest": "Nghỉ (s)"
   }
 }

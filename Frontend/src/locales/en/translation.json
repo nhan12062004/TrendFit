@@ -12,6 +12,8 @@
     "fitness_member": "Fitness Member",
     "login": "Login",
     "new": "New",
+    "today": "Today",
+    "add_new": "Add new",
     "error": "Error: ",
     "member": "Member"
   },
@@ -35,7 +37,30 @@
     "unlink": "Unlink",
     "connect_tg": "Connect Telegram Bot",
     "streak_days": "streak days",
-    "extra_cup": "Extra cup"
+    "extra_cup": "Extra cup",
+    "workout_creator": "Workout Creator",
+    "drag_drop_hint": "Drag and drop exercises to add to your schedule",
+    "copy_day": "Copy from another day",
+    "rest_day": "Rest Day",
+    "search_exercises": "Search exercises...",
+    "muscle_groups": {
+      "all": "All",
+      "chest": "Chest",
+      "back": "Back",
+      "legs": "Legs",
+      "shoulders": "Shoulders",
+      "arms": "Arms",
+      "abs": "Abs",
+      "cardio": "Cardio"
+    },
+    "save_plan": "Save Plan",
+    "add_exercise": "Add Exercise",
+    "today_routine": "Today's Routine",
+    "no_schedule_today": "No workout scheduled for today.",
+    "start_session": "Start Today's Session",
+    "finish_session": "Finish Session",
+    "exercise_added_today": "Added to today's session",
+    "exercise_removed_today": "Removed from today's session"
   },
   "topbar": {
     "search_placeholder": "Search for exercises, menus..."
@@ -280,5 +305,18 @@
     "nutrition_plan": "NUTRITION PLAN",
     "practice_time": "PRACTICE TIME",
     "diet_program": "DIET PROGRAM"
+  },
+  "workout_builder": {
+    "title": "Workout Creator",
+    "select_day": "Select Day",
+    "manage_routine": "Manage Routine",
+    "empty_day": "No exercises for this day. Drag and drop from the library!",
+    "copy_success": "Exercises copied successfully!",
+    "save_success": "Weekly plan saved successfully!",
+    "loading": "Loading data...",
+    "sets": "Sets",
+    "reps": "Reps",
+    "weight": "KG",
+    "rest": "Rest (s)"
   }
 }

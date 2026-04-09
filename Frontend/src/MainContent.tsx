@@ -26,6 +26,31 @@ export default function MainContent() {
     streak: 1
   });
 
+  const parseReps = (reps: string | null | undefined): number => {
+    if (!reps) return 10;
+    const nums = String(reps).match(/\d+/g)?.map(Number).filter(n => !Number.isNaN(n)) || [];
+    if (nums.length === 0) return 10;
+    if (nums.length === 1) return nums[0];
+    return Math.round((nums[0] + nums[nums.length - 1]) / 2);
+  };
+
+  const estimateExerciseKcal = (
+    item: { sets?: number | null; reps?: string | null; weight_kg?: number | null; rest_seconds?: number | null },
+    userWeightKg: number
+  ): number => {
+    const sets = Math.max(1, Number(item.sets || 0));
+    const reps = Math.max(1, parseReps(item.reps));
+    const rest = Math.max(0, Number(item.rest_seconds || 0));
+    const weightKg = Math.max(0, Number(item.weight_kg || 0));
+
+    const workSeconds = sets * reps * 2.8;
+    const restSeconds = Math.max(0, sets - 1) * rest;
+    const durationMinutes = Math.max(1, (workSeconds + restSeconds) / 60);
+    const met = weightKg > 0 ? 6.0 : 5.0;
+    const kcal = (met * 3.5 * Math.max(45, userWeightKg) / 200) * durationMinutes;
+    return Math.round(Math.min(250, Math.max(8, kcal)));
+  };
+
   useEffect(() => {
     async function fetchData() {
       if (!user) return;
@@ -35,17 +60,30 @@ export default function MainContent() {
         const todayStr = today.toISOString().split('T')[0];
         
         // 1. Lấy dữ liệu ngày hôm nay
-        const [lifestyleRes, progressLogRes] = await Promise.all([
+        const [lifestyleRes, progressLogRes, latestBodyRes, todaySessionsRes] = await Promise.all([
           supabase.from('lifestyle_settings').select('workout_duration, weekly_workouts').eq('user_id', user.id).maybeSingle(),
-          supabase.from('daily_progress_logs').select('calories_burned, workout_duration').eq('user_id', user.id).eq('log_date', todayStr).maybeSingle()
+          supabase.from('daily_progress_logs').select('calories_burned, workout_duration').eq('user_id', user.id).eq('log_date', todayStr).maybeSingle(),
+          supabase.from('body_metrics').select('weight').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+          supabase.from('daily_exercise_sessions').select('sets, reps, weight_kg, rest_seconds, is_completed').eq('user_id', user.id).eq('log_date', todayStr)
         ]);
 
-        if (lifestyleRes.data) {
+        const userWeight = Number(latestBodyRes.data?.weight || 70);
+        const todaySessions = todaySessionsRes.data || [];
+        const completedSessions = todaySessions.filter((s: any) => !!s.is_completed);
+        const estimatedCaloriesFromSessions = completedSessions.reduce(
+          (sum: number, item: any) => sum + estimateExerciseKcal(item, userWeight),
+          0
+        );
+
+        if (lifestyleRes.data || todaySessions.length > 0) {
           setStats(prev => ({
             ...prev,
-            workout_duration: progressLogRes.data?.workout_duration || 0,
-            calories_burned: progressLogRes.data?.calories_burned ?? 0,
-            remaining_workouts: lifestyleRes.data?.weekly_workouts || 0
+            workout_duration: progressLogRes.data?.workout_duration || Math.round(completedSessions.length * 8),
+            calories_burned: progressLogRes.data?.calories_burned ?? estimatedCaloriesFromSessions,
+            // Card này đang đặt nhãn Workout, ưu tiên hiển thị bài tập hôm nay
+            remaining_workouts: todaySessions.length > 0
+              ? todaySessions.length
+              : (lifestyleRes.data?.weekly_workouts || 0)
           }));
         }
 
@@ -54,17 +92,30 @@ export default function MainContent() {
         sevenDaysAgo.setDate(today.getDate() - 7);
         const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
-        const { data: weeklyLogs } = await supabase
+        const [{ data: weeklyLogs }, { data: weeklySessions }] = await Promise.all([
+          supabase
           .from('daily_progress_logs')
           .select('calories_burned, workout_duration, log_date')
           .eq('user_id', user.id)
           .gte('log_date', sevenDaysAgoStr)
-          .lte('log_date', todayStr);
+          .lte('log_date', todayStr),
+          supabase
+          .from('daily_exercise_sessions')
+          .select('sets, reps, weight_kg, rest_seconds, is_completed, log_date')
+          .eq('user_id', user.id)
+          .gte('log_date', sevenDaysAgoStr)
+          .lte('log_date', todayStr)
+        ]);
 
-        if (weeklyLogs && weeklyLogs.length > 0) {
-          const totalCalories = weeklyLogs.reduce((sum, log) => sum + (log.calories_burned || 0), 0);
+        if ((weeklyLogs && weeklyLogs.length > 0) || (weeklySessions && weeklySessions.length > 0)) {
+          const totalCaloriesFromLogs = (weeklyLogs || []).reduce((sum, log) => sum + (log.calories_burned || 0), 0);
+          const totalCaloriesFromSessions = (weeklySessions || [])
+            .filter((item: any) => !!item.is_completed)
+            .reduce((sum: number, item: any) => sum + estimateExerciseKcal(item, userWeight), 0);
+
+          const totalCalories = totalCaloriesFromLogs > 0 ? totalCaloriesFromLogs : totalCaloriesFromSessions;
           const totalMinutes = weeklyLogs.reduce((sum, log) => sum + (log.workout_duration || 0), 0);
-          const completedWorkouts = weeklyLogs.filter(log => (log.workout_duration || 0) > 0).length;
+          const completedWorkouts = (weeklySessions || []).filter((item: any) => !!item.is_completed).length;
 
           setWeeklyStats({
             total_workouts: completedWorkouts,
