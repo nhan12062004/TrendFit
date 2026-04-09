@@ -78,12 +78,163 @@
   },
   "survey": {
     "ai_system": "Hệ thống phân tích AI",
+    "common_profile_title": "Hồ sơ sức khỏe của bạn",
     "edit_title": "Chỉnh sửa hồ sơ sức khỏe",
     "new_title": "Xây dựng hồ sơ sức khỏe toàn diện",
     "subtitle_1": "Thông tin càng chi tiết, AI sẽ tạo kế hoạch tập luyện và thực đơn",
     "subtitle_highlight": "chính xác tuyệt đối",
     "subtitle_2": "cho bạn.",
-    "section_1_title": "1. Nhân khẩu học & Nghề nghiệp"
+    "view_subtitle": "Dưới đây là tóm tắt các chỉ số hiện tại được AI đồng bộ từ dữ liệu của bạn.",
+    "required_note": "Lưu ý: Các trường có dấu * là bắt buộc phải điền",
+    "sections": {
+      "demographics": "1. Nhân khẩu học & Nghề nghiệp",
+      "body_metrics": "2. Chỉ số cơ thể & Thành phần mỡ",
+      "nutrition": "3. Chế độ dinh dưỡng & Ăn uống",
+      "health": "4. Tình trạng sức khỏe & Y tế",
+      "experience": "5. Kinh nghiệm & Thói quen vận động",
+      "psychology": "6. Tâm lý & Động lực AI"
+    },
+    "labels": {
+      "full_name": "Họ và tên",
+      "email_auto": "Email (Tự điền)",
+      "phone": "Số điện thoại",
+      "birthday": "Ngày sinh",
+      "gender": "Giới tính",
+      "job": "Công việc hiện tại",
+      "height": "Chiều cao (cm)",
+      "weight": "Cân nặng (kg)",
+      "target_weight": "Cân nặng đích (kg)",
+      "body_fat": "% Mỡ cơ thể (nếu biết)",
+      "chest": "Vòng ngực",
+      "waist": "Vòng bụng",
+      "hips": "Vòng mông",
+      "bmi": "Chỉ số BMI",
+      "diet_preference": "Chế độ ăn & Sở thích",
+      "cooking_ability": "Khả năng nấu nướng",
+      "meals_per_day": "Số bữa ăn/ngày",
+      "water_goal": "Mục tiêu uống nước (L/ngày)",
+      "budget": "Ngân sách ăn uống",
+      "current_diet": "Thực đơn hiện tại",
+      "allergies": "Dị ứng / Kiêng kỵ (Blacklist)",
+      "smoke_drink": "Khói thuốc & Rượu bia",
+      "medications": "Các loại thuốc đang sử dụng",
+      "health_condition": "Bệnh nền",
+      "injuries": "Chấn thương cũ",
+      "work_nature": "Tính chất công việc",
+      "workout_location": "Địa điểm tập luyện",
+      "experience_level": "Kinh nghiệm tập",
+      "activity_level": "Tần suất tập hiện tại",
+      "workout_duration": "Thời lượng/buổi (phút)",
+      "equipment": "Dụng cụ sẵn có",
+      "sleep_hours": "Số giờ ngủ/ngày",
+      "sleep_quality": "Chất lượng giấc ngủ",
+      "stress_level": "Mức độ Stress hàng ngày",
+      "motivation": "Động lực lớn nhất của bạn",
+      "expectations": "Thông điệp gửi AI (Yêu cầu riêng biệt)"
+    },
+    "placeholders": {
+      "full_name": "Nguyễn Văn A",
+      "phone": "090 123 4567",
+      "job": "Vd: Văn phòng, Tự do...",
+      "current_diet": "Vd: Sáng bún, trưa cơm tiệm, tối cơm nhà...",
+      "allergies": "Vd: Hải sản, Sữa bò (Lactose), Đậu phộng...",
+      "medications": "Vd: Thuốc huyết áp, tiểu đường...",
+      "health_condition": "Vd: Cao huyết áp, Tiểu đường tuýp 2...",
+      "injuries": "Vd: Thoát vị đĩa đệm, Đau đầu gối...",
+      "motivation": "Vd: Để mặc quần áo đẹp, Cải thiện sức khỏe...",
+      "expectations": "Tôi muốn tập trung vào phần mông, tôi không thích ăn rau cải..."
+    },
+    "options": {
+      "gender": {
+        "male": "Nam",
+        "female": "Nữ",
+        "other": "Khác"
+      },
+      "diet": {
+        "normal": "Bình thường",
+        "vegetarian": "Ăn chay (Có thể ăn chay)",
+        "high_protein": "Ăn nhiều đạm (High Protein)",
+        "keto": "Keto / Low Carb",
+        "eat_clean": "Eat Clean"
+      },
+      "cooking": {
+        "self": "Tự nấu 100%",
+        "out": "Ăn ngoài quán",
+        "mixed": "Tự nấu tối, ăn ngoài trưa"
+      },
+      "budget": {
+        "student": "Sinh viên (Rẻ, Tiết kiệm)",
+        "normal": "Trung bình (Cơ bản)",
+        "premium": "Cao cấp (Đủ loại thực phẩm)"
+      },
+      "meals": {
+        "2": "2 bữa",
+        "3": "3 bữa chính",
+        "4": "3 bữa chính + 1 bữa phụ",
+        "5": "5 bữa nhỏ/ngày"
+      },
+      "smoke_drink": {
+        "never": "Không bao giờ",
+        "sometimes": "Thỉnh thoảng",
+        "frequently": "Thường xuyên"
+      },
+      "work": {
+        "sedentary": "Ngồi văn phòng nhiều (Sedentary)",
+        "light": "Di chuyển nhẹ nhàng",
+        "active": "Vận động liên tục (Lao động tay chân)"
+      },
+      "location": {
+        "gym": "Phòng Gym chuyên nghiệp",
+        "home": "Tập tại nhà (Home Workout)",
+        "outdoor": "Công viên / Ngoài trời"
+      },
+      "experience": {
+        "newbie": "Người mới hoàn toàn",
+        "under_6m": "Dưới 6 tháng",
+        "6m_2y": "6 tháng - 2 năm",
+        "over_2y": "Trên 2 năm"
+      },
+      "activity": {
+        "none": "Chưa tập luyện",
+        "1_2": "1-2 buổi/tuần",
+        "3_4": "3-4 buổi/tuần",
+        "5_plus": "Trên 5 buổi/tuần"
+      },
+      "equipment": {
+        "gym": "Đầy đủ tạ & máy móc (Gym)",
+        "dumbbells": "Tạ đơn (Dumbbells) & Thảm",
+        "bands": "Dây kháng lực (Resistance Bands)",
+        "bodyweight": "Không dụng cụ (Calisthenics)"
+      },
+      "sleep_h": {
+        "under_5": "Dưới 5 giờ",
+        "5_6": "5-6 giờ",
+        "7_8": "7-8 giờ",
+        "over_8": "Trên 8 giờ"
+      },
+      "sleep_q": {
+        "excellent": "Rất tốt (Sâu giấc, tỉnh táo)",
+        "normal": "Bình thường (Hay thức giấc)",
+        "poor": "Kém (Khó ngủ, mệt mỏi)"
+      },
+      "stress": {
+        "low": "Thấp - Cuộc sống thoải mái",
+        "medium": "Trung bình - Áp lực công việc nhẹ",
+        "high": "Cao - Thường xuyên căng thẳng"
+      }
+    },
+    "notes": {
+      "health_warning": "* Lưu ý: Nếu bạn có bệnh nền nặng, hãy tham khảo ý kiến bác sĩ trước khi bắt đầu bất kỳ lộ trình tập luyện cường độ cao nào. AI sẽ dựa trên thông tin này để giới hạn nhịp tim và áp lực lên khớp.",
+      "sleep_tip": "Giấc ngủ ảnh hưởng 80% quá trình phục hồi. AI sẽ cân đối bài tập dựa trên khả năng hồi phục của bạn.",
+      "confirmation": "Xác nhận: Thông tin này sẽ được mã hóa và gửi tới TrendFit AI Engine. Dữ liệu này là cơ sở để chúng tôi cá nhân hóa 100% lộ trình của bạn."
+    },
+    "buttons": {
+      "cancel": "HỦY",
+      "update": "CẬP NHẬT HỒ SƠ",
+      "activate": "KÍCH HOẠT LỘ TRÌNH AI",
+      "close": "ĐÓNG",
+      "edit": "Chỉnh sửa"
+    }
   },
   "auth": {
     "signup": "Đăng ký",

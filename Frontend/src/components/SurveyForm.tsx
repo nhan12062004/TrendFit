@@ -302,45 +302,45 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10 custom-scrollbar">
           <div className="bg-red-500/10 border border-red-500/20 p-2 rounded-lg mb-4 text-center">
-             <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest">Lưu ý: Các trường có dấu <span className="text-sm">*</span> là bắt buộc phải điền</p>
+             <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest">{t('survey.required_note')}</p>
           </div>
 
           {/* Section 1: Thông tin cá nhân */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-l-4 border-[#a3e635] pl-4">
               <User className="w-5 h-5 text-[#a3e635]" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{t('survey.section_1_title')}</h3>
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{t('survey.sections.demographics')}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Họ và tên <span className="text-red-500">*</span></label>
-                <input required name="full_name" value={formData.full_name} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.full_name ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635]`} placeholder="Nguyễn Văn A" />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.full_name')} <span className="text-red-500">*</span></label>
+                <input required name="full_name" value={formData.full_name} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.full_name ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635]`} placeholder={t('survey.placeholders.full_name')} />
               </div>
               <div className="space-y-1.5 opacity-70">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Email (Tự điền) <span className="text-red-500">*</span></label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.email_auto')} <span className="text-red-500">*</span></label>
                 <input readOnly type="email" name="email" value={formData.email} className="w-full bg-bg-tertiary/50 border border-border-primary rounded-xl py-2 px-3 text-sm outline-none cursor-not-allowed" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Số điện thoại <span className="text-red-500">*</span></label>
-                <input required type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.phone ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635]`} placeholder="090 123 4567" />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.phone')} <span className="text-red-500">*</span></label>
+                <input required type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.phone ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635]`} placeholder={t('survey.placeholders.phone')} />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Ngày sinh <span className="text-red-500">*</span></label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.birthday')} <span className="text-red-500">*</span></label>
                 <input required type="date" name="birthday" value={formData.birthday} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.birthday ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635]`} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Giới tính <span className="text-red-500">*</span></label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.gender')} <span className="text-red-500">*</span></label>
                 <select name="gender" value={formData.gender} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.gender ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635]`}>
-                  <option>Nam</option>
-                  <option>Nữ</option>
-                  <option>Khác</option>
+                  <option value="Nam">{t('survey.options.gender.male')}</option>
+                  <option value="Nữ">{t('survey.options.gender.female')}</option>
+                  <option value="Khác">{t('survey.options.gender.other')}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Công việc hiện tại</label>
-                <input name="job" value={formData.job} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635]" placeholder="Vd: Văn phòng, Tự do..." />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.job')}</label>
+                <input name="job" value={formData.job} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635]" placeholder={t('survey.placeholders.job')} />
               </div>
             </div>
           </section>
@@ -349,41 +349,41 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-l-4 border-blue-400 pl-4">
               <Ruler className="w-5 h-5 text-blue-400" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">2. Chỉ số cơ thể & Thành phần mỡ</h3>
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{t('survey.sections.body_metrics')}</h3>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Chiều cao (cm) <span className="text-red-500">*</span></label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.height')} <span className="text-red-500">*</span></label>
                 <input required type="number" name="height" value={formData.height} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.height ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400`} placeholder="175" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Cân nặng (kg) <span className="text-red-500">*</span></label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.weight')} <span className="text-red-500">*</span></label>
                 <input required type="number" name="weight" value={formData.weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.weight ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400`} placeholder="70" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Cân nặng đích (kg) <span className="text-red-500">*</span></label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.target_weight')} <span className="text-red-500">*</span></label>
                 <input required type="number" name="target_weight" value={formData.target_weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.target_weight ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400`} placeholder="65" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">% Mỡ cơ thể (nếu biết)</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.body_fat')}</label>
                 <input type="number" name="body_fat" value={formData.body_fat} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400" placeholder="15" />
               </div>
             </div>
             <div className="grid grid-cols-4 gap-4 bg-bg-tertiary/30 p-4 rounded-2xl border border-border-primary/50">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">Vòng ngực</label>
+                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">{t('survey.labels.chest')}</label>
                 <input type="number" name="chest" value={formData.chest} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400" />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">Vòng bụng</label>
+                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">{t('survey.labels.waist')}</label>
                 <input type="number" name="waist" value={formData.waist} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400" />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">Vòng mông</label>
+                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">{t('survey.labels.hips')}</label>
                 <input type="number" name="hips" value={formData.hips} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400" />
               </div>
               <div className="space-y-1 flex flex-col justify-center items-center">
-                <label className="text-[9px] font-bold text-[#a3e635] uppercase text-center block">Chỉ số BMI</label>
+                <label className="text-[9px] font-bold text-[#a3e635] uppercase text-center block">{t('survey.labels.bmi')}</label>
                 <div className="w-full bg-[#a3e635]/10 border border-[#a3e635]/30 rounded-lg py-1.5 px-2 text-center text-xs font-bold text-[#a3e635]">
                   {BMI}
                 </div>
@@ -395,64 +395,64 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-l-4 border-emerald-500 pl-4">
               <Apple className="w-5 h-5 text-emerald-500" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">3. Chế độ dinh dưỡng & Ăn uống</h3>
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{t('survey.sections.nutrition')}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Chế độ ăn & Sở thích</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.diet_preference')}</label>
                 <select name="diet_preference" value={formData.diet_preference} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500">
-                  <option>Bình thường</option>
-                  <option>Ăn chay (Có thể ăn chay)</option>
-                  <option>Ăn nhiều đạm (High Protein)</option>
-                  <option>Keto / Low Carb</option>
-                  <option>Eat Clean</option>
+                  <option value="Bình thường">{t('survey.options.diet.normal')}</option>
+                  <option value="Ăn chay (Có thể ăn chay)">{t('survey.options.diet.vegetarian')}</option>
+                  <option value="Ăn nhiều đạm (High Protein)">{t('survey.options.diet.high_protein')}</option>
+                  <option value="Keto / Low Carb">{t('survey.options.diet.keto')}</option>
+                  <option value="Eat Clean">{t('survey.options.diet.eat_clean')}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Khả năng nấu nướng</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.cooking_ability')}</label>
                 <select name="cooking_ability" value={formData.cooking_ability} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500">
-                  <option>Tự nấu 100%</option>
-                  <option>Ăn ngoài quán</option>
-                  <option>Tự nấu tối, ăn ngoài trưa</option>
+                  <option value="Tự nấu 100%">{t('survey.options.cooking.self')}</option>
+                  <option value="Ăn ngoài quán">{t('survey.options.cooking.out')}</option>
+                  <option value="Tự nấu tối, ăn ngoài trưa">{t('survey.options.cooking.mixed')}</option>
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Số bữa ăn/ngày</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.meals_per_day')}</label>
                 <select name="meals_per_day" value={formData.meals_per_day} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500">
-                  <option value="2">2 bữa</option>
-                  <option value="3">3 bữa chính</option>
-                  <option value="4">3 bữa chính + 1 bữa phụ</option>
-                  <option value="5">5 bữa nhỏ/ngày</option>
+                  <option value="2">{t('survey.options.meals.2')}</option>
+                  <option value="3">{t('survey.options.meals.3')}</option>
+                  <option value="4">{t('survey.options.meals.4')}</option>
+                  <option value="5">{t('survey.options.meals.5')}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Mục tiêu uống nước (L/ngày)</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.water_goal')}</label>
                 <div className="relative">
                   <Droplet className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-blue-400" />
                   <input type="number" step="0.1" name="daily_water_goal" value={formData.daily_water_goal} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-500" />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Ngân sách ăn uống</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.budget')}</label>
                 <select name="budget_level" value={formData.budget_level} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500">
-                  <option>Sinh viên (Rẻ, Tiết kiệm)</option>
-                  <option>Trung bình (Cơ bản)</option>
-                  <option>Cao cấp (Đủ loại thực phẩm)</option>
+                  <option value="Sinh viên (Rẻ, Tiết kiệm)">{t('survey.options.budget.student')}</option>
+                  <option value="Trung bình (Cơ bản)">{t('survey.options.budget.normal')}</option>
+                  <option value="Cao cấp (Đủ loại thực phẩm)">{t('survey.options.budget.premium')}</option>
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Thực đơn hiện tại (Vd: Hay ăn cơm tiệm...)</label>
-                <input name="current_diet" value={formData.current_diet} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500" placeholder="Vd: Sáng bún, trưa cơm tiệm, tối cơm nhà..." />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.current_diet')}</label>
+                <input name="current_diet" value={formData.current_diet} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500" placeholder={t('survey.placeholders.current_diet')} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Dị ứng / Kiêng kỵ (Blacklist)</label>
-                <input name="allergies" value={formData.allergies} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500" placeholder="Vd: Hải sản, Sữa bò (Lactose), Đậu phộng..." />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.allergies')}</label>
+                <input name="allergies" value={formData.allergies} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500" placeholder={t('survey.placeholders.allergies')} />
               </div>
             </div>
           </section>
@@ -461,37 +461,37 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-l-4 border-red-500 pl-4">
               <Stethoscope className="w-5 h-5 text-red-500" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">4. Tình trạng sức khỏe & Y tế</h3>
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{t('survey.sections.health')}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Khói thuốc & Rượu bia</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.smoke_drink')}</label>
                 <select name="smoke_drink" value={formData.smoke_drink} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-red-500">
-                  <option>Không bao giờ</option>
-                  <option>Thỉnh thoảng</option>
-                  <option>Thường xuyên</option>
+                  <option value="Không bao giờ">{t('survey.options.smoke_drink.never')}</option>
+                  <option value="Thỉnh thoảng">{t('survey.options.smoke_drink.sometimes')}</option>
+                  <option value="Thường xuyên">{t('survey.options.smoke_drink.frequently')}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Các loại thuốc đang sử dụng</label>
-                <input name="medications" value={formData.medications} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-red-500" placeholder="Vd: Thuốc huyết áp, tiểu đường, hỗ trợ tim mạch..." />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.medications')}</label>
+                <input name="medications" value={formData.medications} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-red-500" placeholder={t('survey.placeholders.medications')} />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Bệnh nền (Tim mạch, huyết áp, tiểu đường...)</label>
-                <textarea name="health_condition" value={formData.health_condition} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 h-24 text-sm outline-none focus:border-red-500" placeholder="Vd: Cao huyết áp, Tiểu đường tuýp 2, Hen suyễn, Tim mạch..." />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.health_condition')}</label>
+                <textarea name="health_condition" value={formData.health_condition} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 h-24 text-sm outline-none focus:border-red-500" placeholder={t('survey.placeholders.health_condition')} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Chấn thương cũ (Xương khớp, lưng, gối...)</label>
-                <textarea name="injuries" value={formData.injuries} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 h-24 text-sm outline-none focus:border-red-500" placeholder="Vd: Thoát vị đĩa đệm lưng dưới, Đau đầu gối trái, Chấn thương cổ tay..." />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.injuries')}</label>
+                <textarea name="injuries" value={formData.injuries} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 h-24 text-sm outline-none focus:border-red-500" placeholder={t('survey.placeholders.injuries')} />
               </div>
             </div>
 
             <div className="bg-red-500/5 border border-red-500/20 p-3 rounded-xl">
               <p className="text-[10px] text-red-400 font-medium leading-relaxed italic">
-                * Lưu ý: Nếu bạn có bệnh nền nặng, hãy tham khảo ý kiến bác sĩ trước khi bắt đầu bất kỳ lộ trình tập luyện cường độ cao nào. AI sẽ dựa trên thông tin này để giới hạn nhịp tim và áp lực lên khớp.
+                {t('survey.notes.health_warning')}
               </p>
             </div>
           </section>
@@ -500,77 +500,77 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-l-4 border-orange-500 pl-4">
               <Zap className="w-5 h-5 text-orange-500" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">5. Kinh nghiệm & Thói quen vận động</h3>
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{t('survey.sections.experience')}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Tính chất công việc</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.work_nature')}</label>
                 <select name="work_nature" value={formData.work_nature} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500">
-                  <option>Ngồi văn phòng nhiều (Sedentary)</option>
-                  <option>Di chuyển nhẹ nhàng</option>
-                  <option>Vận động liên tục (Lao động tay chân)</option>
+                  <option value="Ngồi văn phòng nhiều (Sedentary)">{t('survey.options.work.sedentary')}</option>
+                  <option value="Di chuyển nhẹ nhàng">{t('survey.options.work.light')}</option>
+                  <option value="Vận động liên tục (Lao động tay chân)">{t('survey.options.work.active')}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Địa điểm tập luyện</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.workout_location')}</label>
                 <select name="workout_location" value={formData.workout_location} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500">
-                  <option>Phòng Gym chuyên nghiệp</option>
-                  <option>Tập tại nhà (Home Workout)</option>
-                  <option>Công viên / Ngoài trời</option>
+                  <option value="Phòng Gym chuyên nghiệp">{t('survey.options.location.gym')}</option>
+                  <option value="Tập tại nhà (Home Workout)">{t('survey.options.location.home')}</option>
+                  <option value="Công viên / Ngoài trời">{t('survey.options.location.outdoor')}</option>
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Kinh nghiệm tập</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.experience_level')}</label>
                 <select name="experience_level" value={formData.experience_level} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500">
-                  <option>Người mới hoàn toàn</option>
-                  <option>Dưới 6 tháng</option>
-                  <option>6 tháng - 2 năm</option>
-                  <option>Trên 2 năm</option>
+                  <option value="Người mới hoàn toàn">{t('survey.options.experience.newbie')}</option>
+                  <option value="Dưới 6 tháng">{t('survey.options.experience.under_6m')}</option>
+                  <option value="6 tháng - 2 năm">{t('survey.options.experience.6m_2y')}</option>
+                  <option value="Trên 2 năm">{t('survey.options.experience.over_2y')}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Tần suất tập hiện tại</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.activity_level')}</label>
                 <select name="activity_level" value={formData.activity_level} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500">
-                  <option>Chưa tập luyện</option>
-                  <option>1-2 buổi/tuần</option>
-                  <option>3-4 buổi/tuần</option>
-                  <option>Trên 5 buổi/tuần</option>
+                  <option value="Chưa tập luyện">{t('survey.options.activity.none')}</option>
+                  <option value="1-2 buổi/tuần">{t('survey.options.activity.1_2')}</option>
+                  <option value="3-4 buổi/tuần">{t('survey.options.activity.3_4')}</option>
+                  <option value="Trên 5 buổi/tuần">{t('survey.options.activity.5_plus')}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Thời lượng/buổi (phút)</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.workout_duration')}</label>
                 <input type="number" name="workout_duration" value={formData.workout_duration} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500" placeholder="45" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Dụng cụ sẵn có</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.equipment')}</label>
                 <select name="equipment_available" value={formData.equipment_available} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500">
-                  <option>Đầy đủ tạ & máy móc (Gym)</option>
-                  <option>Tạ đơn (Dumbbells) & Thảm</option>
-                  <option>Dây kháng lực (Resistance Bands)</option>
-                  <option>Không dụng cụ (Calisthenics)</option>
+                  <option value="Đầy đủ tạ & máy móc (Gym)">{t('survey.options.equipment.gym')}</option>
+                  <option value="Tạ đơn (Dumbbells) & Thảm">{t('survey.options.equipment.dumbbells')}</option>
+                  <option value="Dây kháng lực (Resistance Bands)">{t('survey.options.equipment.bands')}</option>
+                  <option value="Không dụng cụ (Calisthenics)">{t('survey.options.equipment.bodyweight')}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Số giờ ngủ/ngày</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.sleep_hours')}</label>
                 <select name="sleep_hours" value={formData.sleep_hours} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500">
-                  <option value="4">Dưới 5 giờ</option>
-                  <option value="6">5-6 giờ</option>
-                  <option value="7">7-8 giờ</option>
-                  <option value="9">Trên 8 giờ</option>
+                  <option value="4">{t('survey.options.sleep_h.under_5')}</option>
+                  <option value="6">{t('survey.options.sleep_h.5_6')}</option>
+                  <option value="7">{t('survey.options.sleep_h.7_8')}</option>
+                  <option value="9">{t('survey.options.sleep_h.over_8')}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Chất lượng giấc ngủ</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.sleep_quality')}</label>
                 <select name="sleep_quality" value={formData.sleep_quality} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-orange-500">
-                  <option>Rất tốt (Sâu giấc, tỉnh táo)</option>
-                  <option>Bình thường (Hay thức giấc)</option>
-                  <option>Kém (Khó ngủ, mệt mỏi)</option>
+                  <option value="Rất tốt (Sâu giấc, tỉnh táo)">{t('survey.options.sleep_q.excellent')}</option>
+                  <option value="Bình thường (Hay thức giấc)">{t('survey.options.sleep_q.normal')}</option>
+                  <option value="Kém (Khó ngủ, mệt mỏi)">{t('survey.options.sleep_q.poor')}</option>
                 </select>
               </div>
             </div>
@@ -578,7 +578,7 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
             <div className="bg-orange-500/5 border border-orange-500/20 p-3 rounded-xl flex gap-3 items-center">
               <Clock className="w-4 h-4 text-orange-500 shrink-0" />
               <p className="text-[9px] text-text-tertiary uppercase tracking-wider font-bold leading-relaxed">
-                Giấc ngủ ảnh hưởng <span className="text-orange-500 italic">80% quá trình phục hồi</span>. AI sẽ cân đối bài tập dựa trên khả năng hồi phục của bạn.
+                {t('survey.notes.sleep_tip')}
               </p>
             </div>
           </section>
@@ -587,32 +587,32 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-l-4 border-purple-500 pl-4">
               <Heart className="w-5 h-5 text-purple-500" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">6. Tâm lý & Động lực AI</h3>
+              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{t('survey.sections.psychology')}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Mức độ Stress hàng ngày</label>
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.stress_level')}</label>
                 <select name="stress_level" value={formData.stress_level} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-purple-500">
-                  <option>Thấp - Cuộc sống thoải mái</option>
-                  <option>Trung bình - Áp lực công việc nhẹ</option>
-                  <option>Cao - Thường xuyên căng thẳng</option>
+                  <option value="Thấp - Cuộc sống thoải mái">{t('survey.options.stress.low')}</option>
+                  <option value="Trung bình - Áp lực công việc nhẹ">{t('survey.options.stress.medium')}</option>
+                  <option value="Cao - Thường xuyên căng thẳng">{t('survey.options.stress.high')}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Động lực lớn nhất của bạn</label>
-                <input name="motivation" value={formData.motivation} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-purple-500" placeholder="Vd: Để mặc quần áo đẹp, Cải thiện sức khỏe..." />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.motivation')}</label>
+                <input name="motivation" value={formData.motivation} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-purple-500" placeholder={t('survey.placeholders.motivation')} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Thông điệp gửi AI (Yêu cầu riêng biệt)</label>
-              <textarea name="expectations" value={formData.expectations} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 h-20 text-sm outline-none focus:border-purple-500" placeholder="Tôi muốn tập trung vào phần mông, tôi không thích ăn rau cải..." />
+              <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{t('survey.labels.expectations')}</label>
+              <textarea name="expectations" value={formData.expectations} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 h-20 text-sm outline-none focus:border-purple-500" placeholder={t('survey.placeholders.expectations')} />
             </div>
           </section>
 
           <div className="bg-[#a3e635]/5 border border-[#a3e635]/20 p-4 rounded-2xl flex gap-3">
             <CheckCircle2 className="w-5 h-5 text-[#a3e635] shrink-0" />
             <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-wider">
-              Xác nhận: Thông tin này sẽ được mã hóa và gửi tới <span className="text-[#a3e635] font-bold">TrendFit AI Engine</span>. Dữ liệu này là cơ sở để chúng tôi cá nhân hóa 100% lộ trình của bạn.
+              {t('survey.notes.confirmation')}
             </p>
           </div>
         </form>
@@ -631,7 +631,7 @@ export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormPr
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                {isOpen ? 'CẬP NHẬT HỒ SƠ' : 'KÍCH HOẠT LỘ TRÌNH AI'}
+                {isOpen ? t('survey.buttons.update') : t('survey.buttons.activate')}
                 <Zap className="w-4 h-4 text-black" />
               </>
             )}

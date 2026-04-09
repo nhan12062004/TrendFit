@@ -78,12 +78,163 @@
   },
   "survey": {
     "ai_system": "AI Analysis System",
+    "common_profile_title": "Your Health Profile",
     "edit_title": "Edit Health Profile",
     "new_title": "Build Comprehensive Health Profile",
     "subtitle_1": "The more detail you provide, the AI will create a workout and diet plan",
     "subtitle_highlight": "with absolute precision",
     "subtitle_2": "for you.",
-    "section_1_title": "1. Demographics & Occupation"
+    "view_subtitle": "Below is a summary of your current metrics synchronized by AI from your data.",
+    "required_note": "Note: Fields marked with * are required",
+    "sections": {
+      "demographics": "1. Demographics & Occupation",
+      "body_metrics": "2. Body Metrics & Fat Percentage",
+      "nutrition": "3. Nutrition & Diet",
+      "health": "4. Health & Medical Status",
+      "experience": "5. Experience & Movement Habits",
+      "psychology": "6. Psychology & AI Motivation"
+    },
+    "labels": {
+      "full_name": "Full Name",
+      "email_auto": "Email (Auto-filled)",
+      "phone": "Phone Number",
+      "birthday": "Birthday",
+      "gender": "Gender",
+      "job": "Current Occupation",
+      "height": "Height (cm)",
+      "weight": "Weight (kg)",
+      "target_weight": "Target Weight (kg)",
+      "body_fat": "% Body Fat (if known)",
+      "chest": "Chest Circumference",
+      "waist": "Waist Circumference",
+      "hips": "Hips Circumference",
+      "bmi": "BMI Index",
+      "diet_preference": "Diet Preference",
+      "cooking_ability": "Cooking Ability",
+      "meals_per_day": "Meals per day",
+      "water_goal": "Water Goal (L/day)",
+      "budget": "Food Budget",
+      "current_diet": "Current Diet",
+      "allergies": "Allergies / Restrictions (Blacklist)",
+      "smoke_drink": "Smoking & Alcohol",
+      "medications": "Current Medications",
+      "health_condition": "Health Condition",
+      "injuries": "Old Injuries",
+      "work_nature": "Work Nature",
+      "workout_location": "Workout Location",
+      "experience_level": "Experience Level",
+      "activity_level": "Current Frequency",
+      "workout_duration": "Duration/session (mins)",
+      "equipment": "Available Equipment",
+      "sleep_hours": "Sleep hours/day",
+      "sleep_quality": "Sleep Quality",
+      "stress_level": "Daily Stress Level",
+      "motivation": "Your Biggest Motivation",
+      "expectations": "Message to AI (Specific Requests)"
+    },
+    "placeholders": {
+      "full_name": "John Doe",
+      "phone": "090 123 4567",
+      "job": "e.g. Office worker, Freelancer...",
+      "current_diet": "e.g. Noodles for breakfast, eating out for lunch...",
+      "allergies": "e.g. Seafood, Lactose, Peanuts...",
+      "medications": "e.g. Blood pressure, diabetes meds...",
+      "health_condition": "e.g. Hypertension, Type 2 Diabetes...",
+      "injuries": "e.g. Herniated disc, knee pain...",
+      "motivation": "e.g. To look good in clothes, improved health...",
+      "expectations": "I want to focus on my glutes, I don't like broccoli..."
+    },
+    "options": {
+      "gender": {
+        "male": "Male",
+        "female": "Female",
+        "other": "Other"
+      },
+      "diet": {
+        "normal": "Normal",
+        "vegetarian": "Vegetarian",
+        "high_protein": "High Protein",
+        "keto": "Keto / Low Carb",
+        "eat_clean": "Eat Clean"
+      },
+      "cooking": {
+        "self": "100% Self-cooked",
+        "out": "Eating out",
+        "mixed": "Cook dinner, eat out lunch"
+      },
+      "budget": {
+        "student": "Student (Cheap, Budget)",
+        "normal": "Average (Basic)",
+        "premium": "Premium (Diverse foods)"
+      },
+      "meals": {
+        "2": "2 meals",
+        "3": "3 main meals",
+        "4": "3 main + 1 snack",
+        "5": "5 small meals/day"
+      },
+      "smoke_drink": {
+        "never": "Never",
+        "sometimes": "Sometimes",
+        "frequently": "Frequently"
+      },
+      "work": {
+        "sedentary": "Office/Sedentary",
+        "light": "Light movement",
+        "active": "Constantly moving (Manual labor)"
+      },
+      "location": {
+        "gym": "Professional Gym",
+        "home": "Home Workout",
+        "outdoor": "Park / Outdoor"
+      },
+      "experience": {
+        "newbie": "Total beginner",
+        "under_6m": "Under 6 months",
+        "6m_2y": "6 months - 2 years",
+        "over_2y": "Over 2 years"
+      },
+      "activity": {
+        "none": "Not exercising",
+        "1_2": "1-2 sessions/week",
+        "3_4": "3-4 sessions/week",
+        "5_plus": "Over 5 sessions/week"
+      },
+      "equipment": {
+        "gym": "Full equipment (Gym)",
+        "dumbbells": "Dumbbells & Mat",
+        "bands": "Resistance Bands",
+        "bodyweight": "No equipment (Calisthenics)"
+      },
+      "sleep_h": {
+        "under_5": "Under 5 hours",
+        "5_6": "5-6 hours",
+        "7_8": "7-8 hours",
+        "over_8": "Over 8 hours"
+      },
+      "sleep_q": {
+        "excellent": "Excellent (Deep sleep, alert)",
+        "normal": "Average (Frequent waking)",
+        "poor": "Poor (Trouble sleeping, tired)"
+      },
+      "stress": {
+        "low": "Low - Comfortable life",
+        "medium": "Medium - Light work pressure",
+        "high": "High - Frequent stress"
+      }
+    },
+    "notes": {
+      "health_warning": "* Note: If you have serious health conditions, please consult a doctor before starting any high-intensity workout. AI will use this to limit heart rate and joint pressure.",
+      "sleep_tip": "Sleep affects 80% of recovery. AI will balance your workouts based on your recovery capacity.",
+      "confirmation": "Confirmation: This information will be encrypted and sent to TrendFit AI Engine. This data is the basis for 100% personalizing your journey."
+    },
+    "buttons": {
+      "cancel": "CANCEL",
+      "update": "UPDATE PROFILE",
+      "activate": "ACTIVATE AI JOURNEY",
+      "close": "CLOSE",
+      "edit": "Edit"
+    }
   },
   "auth": {
     "signup": "Sign Up",
