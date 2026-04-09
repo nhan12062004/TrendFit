@@ -133,21 +133,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
 
       <div className="p-4 border-t border-border-primary text-text-tertiary">
         <div 
-          className="bg-bg-tertiary rounded-xl p-4 mb-4 cursor-pointer hover:bg-bg-quaternary transition-colors group"
-          onClick={async () => {
-            if (!isLoggedIn) return;
-            const newIntake = waterIntake + 0.25;
-            const today = new Date().toISOString().split('T')[0];
-            const { error } = await supabase
-              .from('daily_progress_logs')
-              .upsert({ 
-                user_id: user?.id, 
-                log_date: today, 
-                water_intake_ml: newIntake * 1000 
-              }, { onConflict: 'user_id,log_date' });
-            
-            if (!error) setWaterIntake(newIntake);
-          }}
+          className="bg-bg-tertiary rounded-xl p-4 mb-4 transition-colors group"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -156,18 +142,40 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
             </div>
             <span className="text-[10px] text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity">+250ml</span>
           </div>
-          <div className="flex gap-1 mb-2">
-            {[1, 2, 3, 4, 5].map((i) => {
-              const threshold = (waterGoal / 5) * i;
-              const isFilled = waterIntake >= threshold;
-              const isPartial = !isFilled && waterIntake > threshold - (waterGoal / 5);
+          <div className="flex flex-wrap gap-1 mb-2">
+            {Array.from({ length: Math.max(Math.ceil(waterGoal / 0.25), Math.floor(waterIntake / 0.25) + 1) }).map((_, idx) => {
+              const i = idx + 1;
+              const cupSize = 0.25;
+              const isFilled = waterIntake >= i * cupSize;
+              const isNext = !isFilled && waterIntake >= (i - 1) * cupSize;
+              const isExtra = i * cupSize > waterGoal;
               
               return (
                 <div 
                   key={i} 
-                  className={`h-8 flex-1 rounded-md transition-all duration-500 ${
-                    isFilled ? 'bg-blue-500' : isPartial ? 'bg-blue-500/30' : 'bg-bg-quaternary'
+                  onClick={async () => {
+                    if (!isLoggedIn) return;
+                    const newIntake = i * cupSize;
+                    const today = new Date().toISOString().split('T')[0];
+                    const { error } = await supabase
+                      .from('daily_progress_logs')
+                      .upsert({ 
+                        user_id: user?.id, 
+                        log_date: today, 
+                        water_intake_ml: newIntake * 1000 
+                      }, { onConflict: 'user_id,log_date' });
+                    
+                    if (!error) {
+                      setWaterIntake(newIntake);
+                      refreshProfile();
+                    }
+                  }}
+                  className={`h-6 w-6 rounded-md cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 ${
+                    isFilled 
+                      ? isExtra ? 'bg-emerald-500 shadow-sm shadow-emerald-500/20' : 'bg-blue-500 shadow-sm shadow-blue-500/20'
+                      : isNext ? 'bg-blue-500/20 animate-pulse' : 'bg-bg-primary'
                   }`}
+                  title={isExtra ? t('sidebar.extra_cup', 'Cốc uống thêm') : undefined}
                 />
               );
             })}

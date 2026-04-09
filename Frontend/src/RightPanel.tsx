@@ -16,14 +16,14 @@ export default function RightPanel() {
     gender: 'male',
     activity_level: 'moderate',
     goal: 'maintenance',
-    water_goal: 2.5,
-    sleep_hours: 7
+    water_goal: 0,
+    sleep_hours: 0
   });
 
   const [consumedKcal, setConsumedKcal] = useState(0);
   const [actualWater, setActualWater] = useState(0);
   const [todayWorkouts, setTodayWorkouts] = useState<any[]>([]);
-  const [sleepHours, setSleepHours] = useState({ actual: 0, target: 7 });
+  const [sleepHours, setSleepHours] = useState({ actual: 0, target: 0 });
   const [aiTargetKcal, setAiTargetKcal] = useState<number | null>(null);
 
   useEffect(() => {
@@ -47,7 +47,6 @@ export default function RightPanel() {
         if (health?.sleep_hours) {
           const sleepStr = String(health.sleep_hours);
           if (sleepStr.includes('-')) {
-            // Lấy số sau dấu gạch ngang (ví dụ 8 trong 7-8)
             targetSleep = parseInt(sleepStr.split('-')[1]) || 7;
           } else {
             targetSleep = parseInt(sleepStr) || 7;
@@ -72,7 +71,6 @@ export default function RightPanel() {
           });
         }
 
-        // Lấy mục tiêu calo từ AI
         const { data: nutritionPlan } = await supabase
           .from('nutrition_plans')
           .select('total_calories')
@@ -83,7 +81,6 @@ export default function RightPanel() {
           setAiTargetKcal(nutritionPlan.total_calories);
         }
 
-        // Lấy lộ trình tập luyện
         const { data: workoutRec } = await supabase
           .from('ai_recommendations')
           .select('recommendation_content')
@@ -101,7 +98,6 @@ export default function RightPanel() {
               : workoutRec.recommendation_content;
             setTodayWorkouts(Array.isArray(content) ? content : []);
           } catch {
-            console.error('Failed to parse workout recommendation content');
             setTodayWorkouts([]);
           }
         }
@@ -125,7 +121,22 @@ export default function RightPanel() {
         console.error('Error fetching metrics/workouts:', e);
       }
     }
-    if (isLoggedIn) fetchMetrics();
+    
+    if (isLoggedIn) {
+      fetchMetrics();
+    } else {
+      // Reset everything when not logged in
+      setMetrics({
+        weight: 0, height: 0, age: 0, gender: 'male',
+        activity_level: 'moderate', goal: 'maintenance',
+        water_goal: 0, sleep_hours: 0
+      });
+      setConsumedKcal(0);
+      setActualWater(0);
+      setTodayWorkouts([]);
+      setSleepHours({ actual: 0, target: 0 });
+      setAiTargetKcal(null);
+    }
   }, [user, isLoggedIn, refreshTick]);
 
   const targetKcal = aiTargetKcal || 0;
@@ -171,15 +182,16 @@ export default function RightPanel() {
             <span className="text-[10px] text-text-tertiary">{t('right_panel.calories_consumed')}</span>
           </div>
           <div className="relative w-24 h-24">
-            <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
+            <svg viewBox="0 0 36 36" className="w-full h-full">
               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" strokeWidth="3" />
               <path
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 fill="none"
                 stroke="#a3e635"
                 strokeWidth="3"
+                strokeDashoffset="0"
                 strokeDasharray={`${progressPercent}, 100`}
-                className="transition-all duration-[1000ms] ease-out"
+                className="transition-all duration-[1000ms] ease-out drop-shadow-[0_0_8px_rgba(163,230,53,0.3)]"
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -211,14 +223,14 @@ export default function RightPanel() {
             <span className="text-xs font-medium text-text-secondary">{t('right_panel.sleep')}</span>
           </div>
           <div className="relative w-16 h-16 mb-2">
-            <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
+            <svg viewBox="0 0 36 36" className="w-full h-full">
               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" strokeWidth="4" />
               <path
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 fill="none"
                 stroke="#a855f7"
                 strokeWidth="4"
-                strokeDasharray={`${(sleepHours.actual / sleepHours.target) * 100}, 100`}
+                strokeDasharray={`${sleepHours.target > 0 ? (sleepHours.actual / sleepHours.target) * 100 : 0}, 100`}
                 className="transition-all duration-[1000ms] ease-out"
               />
             </svg>
@@ -238,14 +250,14 @@ export default function RightPanel() {
             <span className="text-xs font-medium text-text-secondary">{t('right_panel.water')}</span>
           </div>
           <div className="relative w-16 h-16 mb-2">
-            <svg viewBox="0 0 36 36" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
+            <svg viewBox="0 0 36 36" className="w-full h-full">
               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" strokeWidth="4" />
               <path
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 fill="none"
                 stroke="#60a5fa"
                 strokeWidth="4"
-                strokeDasharray={`${(actualWater / metrics.water_goal) * 100}, 100`}
+                strokeDasharray={`${metrics.water_goal > 0 ? (actualWater / metrics.water_goal) * 100 : 0}, 100`}
                 className="transition-all duration-[1000ms] ease-out"
               />
             </svg>

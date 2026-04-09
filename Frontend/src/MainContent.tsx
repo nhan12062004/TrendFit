@@ -135,8 +135,8 @@ export default function MainContent() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="bg-bg-secondary rounded-2xl p-6 border border-border-primary">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+        <div className="bg-bg-secondary rounded-2xl p-4 md:p-6 border border-border-primary">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Dumbbell className="w-5 h-5 text-blue-400" />
@@ -145,17 +145,17 @@ export default function MainContent() {
             <span className="text-text-tertiary">...</span>
           </div>
           <div className="flex items-end justify-between">
-            <div>
-              <span className="text-3xl font-bold text-text-primary">{stats.remaining_workouts}</span>
-              <span className="text-sm text-text-tertiary ml-1">{t('dashboard.workouts_unit')}</span>
+            <div className="flex flex-col">
+              <span className="text-2xl md:text-3xl font-bold text-text-primary">{stats.remaining_workouts}</span>
+              <span className="text-[10px] md:text-sm text-text-tertiary font-medium">{t('dashboard.workouts_unit')}</span>
             </div>
-            <svg className="w-24 h-8" viewBox="0 0 100 30">
+            <svg className="w-16 md:w-24 h-8" viewBox="0 0 100 30">
               <path d="M0,15 Q10,5 20,15 T40,15 T60,5 80,25 T100,15" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
         </div>
 
-        <div className="bg-bg-secondary rounded-2xl p-6 border border-border-primary">
+        <div className="bg-bg-secondary rounded-2xl p-4 md:p-6 border border-border-primary">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Flame className="w-5 h-5 text-[#ff5e00]" />
@@ -164,19 +164,19 @@ export default function MainContent() {
             <span className="text-text-tertiary">...</span>
           </div>
           <div className="flex items-end justify-between">
-            <div>
-              <span className="text-3xl font-bold text-text-primary">
+            <div className="flex flex-col">
+              <span className="text-2xl md:text-3xl font-bold text-text-primary">
                 <AnimatedNumber value={stats.calories_burned} />
               </span>
-              <span className="text-sm text-text-tertiary ml-1">Kcal</span>
+              <span className="text-[10px] md:text-sm text-text-tertiary font-medium">Kcal</span>
             </div>
-            <svg className="w-24 h-8" viewBox="0 0 100 30">
+            <svg className="w-16 md:w-24 h-8" viewBox="0 0 100 30">
               <path d="M0,25 Q15,5 30,20 T60,10 T90,25 T100,15" fill="none" stroke="#ff5e00" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
         </div>
 
-        <div className="bg-bg-secondary rounded-2xl p-6 border border-border-primary">
+        <div className="bg-bg-secondary rounded-2xl p-4 md:p-6 border border-border-primary">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Activity className="w-5 h-5 text-[#a3e635]" />
@@ -185,13 +185,13 @@ export default function MainContent() {
             <span className="text-text-tertiary">...</span>
           </div>
           <div className="flex items-end justify-between">
-            <div>
-              <span className="text-3xl font-bold text-text-primary">
+            <div className="flex flex-col">
+              <span className="text-2xl md:text-3xl font-bold text-text-primary">
                 <AnimatedNumber value={stats.workout_duration} />
               </span>
-              <span className="text-sm text-text-tertiary ml-1">{t('dashboard.minutes_unit')}</span>
+              <span className="text-[10px] md:text-sm text-text-tertiary font-medium">{t('dashboard.minutes_unit')}</span>
             </div>
-            <svg className="w-24 h-8" viewBox="0 0 100 30">
+            <svg className="w-16 md:w-24 h-8" viewBox="0 0 100 30">
               <path d="M0,15 Q20,25 40,10 T70,20 T100,5" fill="none" stroke="#a3e635" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
@@ -206,7 +206,7 @@ export default function MainContent() {
             {t('dashboard.view_all')} < ArrowRight className="w-4 h-4" />
           </a>
         </div>
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {[
             { title: t('courses.weightlifting', 'Nâng tạ'), level: t('levels.advanced', 'Nâng cao'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/weight-lifting.jpg' },
             { title: t('courses.muscle_growth', 'Phát triển cơ bắp'), level: t('levels.intermediate', 'Trung cấp'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/muscle-training.jpg' },
@@ -238,7 +238,7 @@ export default function MainContent() {
             {t('dashboard.view_all')} < ArrowRight className="w-4 h-4" />
           </a>
         </div>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { title: t('services.workout_program', 'CHƯƠNG TRÌNH TẬP LUYỆN'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/WORKOUT%20PROGRAM.jpg' },
             { title: t('services.nutrition_plan', 'KẾ HOẠCH DINH DƯỠNG'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/NUTRITION%20PLAN.jpg' },
@@ -263,8 +263,8 @@ export default function MainContent() {
           <Activity className="w-5 h-5 text-[#a3e635]" />
           <h3 className="text-lg font-bold text-text-primary">{t('dashboard.weekly_summary')}</h3>
         </div>
-        <div className="grid grid-cols-4 gap-4 text-center divide-x divide-border-primary">
-          <div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center divide-y md:divide-y-0 md:divide-x divide-border-primary">
+          <div className="py-2 md:py-0">
             <p className="text-3xl font-bold text-[#a3e635] mb-1">
               <AnimatedNumber value={weeklyStats.total_workouts} />
             </p>
@@ -282,8 +282,8 @@ export default function MainContent() {
             </p>
             <p className="text-xs text-text-tertiary font-medium">{t('dashboard.total_minutes')}</p>
           </div>
-          <div>
-            <p className="text-3xl font-bold text-[#ec4899] mb-1">
+          <div className="py-2 md:py-0 border-l-0 md:border-l border-border-primary">
+            <p className="text-2xl md:text-3xl font-bold text-[#ec4899] mb-1">
               <AnimatedNumber value={weeklyStats.streak} />
             </p>
             <p className="text-xs text-text-tertiary font-medium">{t('dashboard.streak')}</p>

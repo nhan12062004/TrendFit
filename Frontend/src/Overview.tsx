@@ -9,13 +9,12 @@ export default function Overview() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Khi refreshTick thay đổi hoặc mount lần đầu, hiện loading chung
-    setLoading(true);
+    // Chỉ hiện loading chung khi mount lần đầu để đồng bộ cả 2 panel
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 800); // Giả lập thời gian load để đồng bộ cả 2 panel
+    }, 800);
     return () => clearTimeout(timer);
-  }, [refreshTick]);
+  }, []); // Remove refreshTick to prevent full-page reload on data update
 
   if (loading) {
     return <LoadingScreen />;

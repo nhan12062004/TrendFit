@@ -34,7 +34,8 @@
     "connected": "Đã kết nối",
     "unlink": "Hủy liên kết",
     "connect_tg": "Kết nối Telegram Bot",
-    "streak_days": "ngày liên tiếp"
+    "streak_days": "ngày liên tiếp",
+    "extra_cup": "Cốc uống thêm"
   },
   "topbar": {
     "search_placeholder": "Tìm kiếm bài tập, thực đơn,..."

@@ -34,7 +34,8 @@
     "connected": "Connected",
     "unlink": "Unlink",
     "connect_tg": "Connect Telegram Bot",
-    "streak_days": "streak days"
+    "streak_days": "streak days",
+    "extra_cup": "Extra cup"
   },
   "topbar": {
     "search_placeholder": "Search for exercises, menus..."
