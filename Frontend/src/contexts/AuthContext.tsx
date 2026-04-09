@@ -35,16 +35,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkProfile = async (userId: string) => {
     setIsCheckingProfile(true);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      // 1. Lấy thông tin cơ bản từ profiles
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    setProfile(data || null);
-    setHasProfile(!!data && !error);
-    setUserRole(data?.role || 'user');
-    setIsCheckingProfile(false);
+      // 2. Kiểm tra xem đã hoàn thành survey chưa (lifestyle_settings tồn tại)
+      const { data: lifestyleData } = await supabase
+        .from('lifestyle_settings')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      setProfile(profileData || null);
+      // hasProfile chỉ là true khi ĐÃ CÓ profile và ĐÃ HOÀN THÀNH survey
+      setHasProfile(!!profileData && !!lifestyleData);
+      setUserRole(profileData?.role || 'user');
+    } catch (error) {
+      console.error('Error checking profile/survey status:', error);
+      setProfile(null);
+      setHasProfile(false);
+    } finally {
+      setIsCheckingProfile(false);
+    }
   };
 
   useEffect(() => {

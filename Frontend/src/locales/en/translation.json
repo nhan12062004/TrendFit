@@ -259,5 +259,22 @@
     "nutrition_plan": "NUTRITION PLAN",
     "practice_time": "PRACTICE TIME",
     "diet_program": "DIET PROGRAM"
+  },
+  "change_password": {
+    "title": "Change New Password",
+    "subtitle": "Please enter your new password to secure your account",
+    "old_password_label": "Current Password",
+    "new_password_label": "New Password",
+    "confirm_password_label": "Confirm Password",
+    "old_password_placeholder": "Enter current password",
+    "new_password_placeholder": "Enter at least 6 characters",
+    "confirm_password_placeholder": "Re-enter new password",
+    "submit_btn": "CONFIRM CHANGES",
+    "success_msg": "Password changed successfully!",
+    "error_email_not_found": "User email information not found",
+    "error_password_length": "New password must be at least 6 characters",
+    "error_password_mismatch": "Confirmation password does not match",
+    "error_old_password_incorrect": "Current password is incorrect",
+    "error_generic": "An error occurred, please try again"
   }
 }
