@@ -24,17 +24,17 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
     setMessage({ type: '', text: '' });
 
     if (!user?.email) {
-      setMessage({ type: 'error', text: t('change_password.error_email_not_found') });
+      setMessage({ type: 'error', text: t('auth.change_password.errors.email_not_found') });
       return;
     }
 
     if (newPassword.length < 6) {
-      setMessage({ type: 'error', text: t('change_password.error_password_length') });
+      setMessage({ type: 'error', text: t('auth.change_password.errors.password_too_short') });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setMessage({ type: 'error', text: t('change_password.error_password_mismatch') });
+      setMessage({ type: 'error', text: t('auth.change_password.errors.password_mismatch') });
       return;
     }
 
@@ -47,7 +47,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
       });
 
       if (authError) {
-        throw new Error(t('change_password.error_old_password_incorrect'));
+        throw new Error(t('auth.change_password.errors.incorrect_old_password'));
       }
 
       // BƯỚC 2: Cập nhật mật khẩu mới
@@ -57,7 +57,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
       if (updateError) throw updateError;
 
-      setMessage({ type: 'success', text: t('change_password.success_msg') });
+      setMessage({ type: 'success', text: t('auth.change_password.success') });
       setTimeout(() => {
         setOldPassword('');
         setNewPassword('');
@@ -66,7 +66,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
         setMessage({ type: '', text: '' });
       }, 2000);
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || t('change_password.error_generic') });
+      setMessage({ type: 'error', text: err.message || t('auth.change_password.errors.generic') });
     } finally {
       setLoading(false);
     }
@@ -87,13 +87,13 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
           <div className="w-16 h-16 bg-[#a3e635]/10 rounded-2xl flex items-center justify-center mb-4 border border-[#a3e635]/20">
             <Lock className="w-8 h-8 text-[#a3e635]" />
           </div>
-          <h2 className="text-xl font-black text-white uppercase tracking-tight">{t('change_password.title')}</h2>
-          <p className="text-xs text-text-secondary mt-1">{t('change_password.subtitle')}</p>
+          <h2 className="text-xl font-black text-white uppercase tracking-tight">{t('auth.change_password.title')}</h2>
+          <p className="text-xs text-text-secondary mt-1">{t('auth.change_password.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{t('change_password.old_password_label')}</label>
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{t('auth.change_password.old_password')}</label>
             <div className="relative">
               <input
                 required
@@ -101,13 +101,13 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
                 className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 text-sm outline-none focus:border-red-500/50 text-white pr-12"
-                placeholder={t('change_password.old_password_placeholder')}
+                placeholder={t('auth.change_password.placeholders.old_password')}
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{t('change_password.new_password_label')}</label>
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{t('auth.change_password.new_password')}</label>
             <div className="relative">
               <input
                 required
@@ -115,7 +115,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 text-sm outline-none focus:border-[#a3e635] text-white pr-12"
-                placeholder={t('change_password.new_password_placeholder')}
+                placeholder={t('auth.change_password.placeholders.new_password')}
               />
               <button
                 type="button"
@@ -128,14 +128,14 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{t('change_password.confirm_password_label')}</label>
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{t('auth.change_password.confirm_password')}</label>
             <input
               required
               type={showPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 text-sm outline-none focus:border-[#a3e635] text-white"
-              placeholder={t('change_password.confirm_password_placeholder')}
+              placeholder={t('auth.change_password.placeholders.confirm_password')}
             />
           </div>
 
@@ -152,7 +152,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
             disabled={loading}
             className="w-full bg-[#a3e635] text-black font-black py-3 rounded-xl hover:bg-[#bef264] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-[#a3e635]/10 mt-2 disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('change_password.submit_btn')}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('auth.change_password.submit')}
           </button>
         </form>
       </div>

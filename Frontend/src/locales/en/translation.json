@@ -242,7 +242,28 @@
     "no_account": "Don't have an account?",
     "has_account": "Already have an account?",
     "confirm_password": "Confirm Password",
-    "password_mismatch": "Passwords do not match"
+    "password_mismatch": "Passwords do not match",
+    "change_password": {
+      "title": "Set New Password",
+      "subtitle": "Please enter a new password to secure your account",
+      "old_password": "Current Password",
+      "new_password": "New Password",
+      "confirm_password": "Confirm New Password",
+      "placeholders": {
+        "old_password": "Enter current password",
+        "new_password": "At least 6 characters",
+        "confirm_password": "Re-type new password"
+      },
+      "submit": "CONFIRM CHANGES",
+      "errors": {
+        "email_not_found": "User email not found",
+        "password_too_short": "New password must be at least 6 characters",
+        "password_mismatch": "Confirm password does not match",
+        "incorrect_old_password": "Current password is incorrect",
+        "generic": "Something went wrong, please try again"
+      },
+      "success": "Password changed successfully!"
+    }
   },
   "courses": {
     "weightlifting": "Weightlifting",
@@ -259,22 +280,5 @@
     "nutrition_plan": "NUTRITION PLAN",
     "practice_time": "PRACTICE TIME",
     "diet_program": "DIET PROGRAM"
-  },
-  "change_password": {
-    "title": "Change New Password",
-    "subtitle": "Please enter your new password to secure your account",
-    "old_password_label": "Current Password",
-    "new_password_label": "New Password",
-    "confirm_password_label": "Confirm Password",
-    "old_password_placeholder": "Enter current password",
-    "new_password_placeholder": "Enter at least 6 characters",
-    "confirm_password_placeholder": "Re-enter new password",
-    "submit_btn": "CONFIRM CHANGES",
-    "success_msg": "Password changed successfully!",
-    "error_email_not_found": "User email information not found",
-    "error_password_length": "New password must be at least 6 characters",
-    "error_password_mismatch": "Confirmation password does not match",
-    "error_old_password_incorrect": "Current password is incorrect",
-    "error_generic": "An error occurred, please try again"
   }
 }

@@ -242,7 +242,28 @@
     "no_account": "Chưa có tài khoản?",
     "has_account": "Đã có tài khoản?",
     "confirm_password": "Xác nhận mật khẩu",
-    "password_mismatch": "Mật khẩu không khớp"
+    "password_mismatch": "Mật khẩu không khớp",
+    "change_password": {
+      "title": "Đổi mật khẩu mới",
+      "subtitle": "Vui lòng nhập mật khẩu mới để bảo mật tài khoản của bạn",
+      "old_password": "Mật khẩu hiện tại",
+      "new_password": "Mật khẩu mới",
+      "confirm_password": "Xác nhận mật khẩu",
+      "placeholders": {
+        "old_password": "Nhập mật khẩu hiện tại",
+        "new_password": "Nhập ít nhất 6 ký tự",
+        "confirm_password": "Nhập lại mật khẩu mới"
+      },
+      "submit": "XÁC NHẬN THAY ĐỔI",
+      "errors": {
+        "email_not_found": "Không tìm thấy thông tin email người dùng",
+        "password_too_short": "Mật khẩu mới phải có ít nhất 6 ký tự",
+        "password_mismatch": "Mật khẩu xác nhận không khớp",
+        "incorrect_old_password": "Mật khẩu hiện tại không chính xác",
+        "generic": "Có lỗi xảy ra, vui lòng thử lại"
+      },
+      "success": "Đổi mật khẩu thành công!"
+    }
   },
   "courses": {
     "weightlifting": "Nâng tạ",
@@ -259,22 +280,5 @@
     "nutrition_plan": "KẾ HOẠCH DINH DƯỠNG",
     "practice_time": "THỜI GIAN THỰC HÀNH",
     "diet_program": "CHƯƠNG TRÌNH ĂN KIÊNG"
-  },
-  "change_password": {
-    "title": "Đổi mật khẩu mới",
-    "subtitle": "Vui lòng nhập mật khẩu mới để bảo mật tài khoản của bạn",
-    "old_password_label": "Mật khẩu hiện tại",
-    "new_password_label": "Mật khẩu mới",
-    "confirm_password_label": "Xác nhận mật khẩu",
-    "old_password_placeholder": "Nhập mật khẩu hiện tại",
-    "new_password_placeholder": "Nhập ít nhất 6 ký tự",
-    "confirm_password_placeholder": "Nhập lại mật khẩu mới",
-    "submit_btn": "XÁC NHẬN THAY ĐỔI",
-    "success_msg": "Đổi mật khẩu thành công!",
-    "error_email_not_found": "Không tìm thấy thông tin email người dùng",
-    "error_password_length": "Mật khẩu mới phải có ít nhất 6 ký tự",
-    "error_password_mismatch": "Mật khẩu xác nhận không khớp",
-    "error_old_password_incorrect": "Mật khẩu hiện tại không chính xác",
-    "error_generic": "Có lỗi xảy ra, vui lòng thử lại"
   }
 }
