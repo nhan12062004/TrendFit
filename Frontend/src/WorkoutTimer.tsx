@@ -19,6 +19,26 @@ interface SessionItem {
   } | null;
 }
 
+const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+const getDatePartsInTimeZone = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value || '1970';
+  const month = parts.find((p) => p.type === 'month')?.value || '01';
+  const day = parts.find((p) => p.type === 'day')?.value || '01';
+  return { year, month, day };
+};
+
+const getVietnamDateKey = (date = new Date()): string => {
+  const { year, month, day } = getDatePartsInTimeZone(date, VIETNAM_TIMEZONE);
+  return `${year}-${month}-${day}`;
+};
+
 const formatSeconds = (seconds: number): string => {
   const safe = Math.max(0, seconds);
   const mm = Math.floor(safe / 60).toString().padStart(2, '0');
@@ -34,9 +54,18 @@ export default function WorkoutTimer() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [isRunning, setIsRunning] = useState(false);
+  const [vnToday, setVnToday] = useState(() => getVietnamDateKey());
 
   const current = items[currentIndex];
   const nextItems = items.slice(currentIndex + 1, currentIndex + 4);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const nextDay = getVietnamDateKey();
+      setVnToday(prev => (prev === nextDay ? prev : nextDay));
+    }, 30000);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -45,7 +74,6 @@ export default function WorkoutTimer() {
         return;
       }
       setIsLoading(true);
-      const today = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
         .from('daily_exercise_sessions')
         .select(`
@@ -53,7 +81,7 @@ export default function WorkoutTimer() {
           exercises:exercise_id (name, gif_url)
         `)
         .eq('user_id', user.id)
-        .eq('log_date', today)
+        .eq('log_date', vnToday)
         .order('order_index', { ascending: true });
 
       if (error) {
@@ -69,7 +97,26 @@ export default function WorkoutTimer() {
       setIsLoading(false);
     };
     load();
-  }, [user]);
+  }, [user, vnToday]);
+
+  useEffect(() => {
+    if (!user) return;
+    const id = window.setInterval(async () => {
+      const { data, error } = await supabase
+        .from('daily_exercise_sessions')
+        .select(`
+          *,
+          exercises:exercise_id (name, gif_url)
+        `)
+        .eq('user_id', user.id)
+        .eq('log_date', vnToday)
+        .order('order_index', { ascending: true });
+      if (!error && data) {
+        setItems(data as SessionItem[]);
+      }
+    }, 10000);
+    return () => window.clearInterval(id);
+  }, [user, vnToday]);
 
   useEffect(() => {
     setIsRunning(false);
@@ -78,17 +125,18 @@ export default function WorkoutTimer() {
 
   useEffect(() => {
     if (!isRunning) return;
+    const resetValue = Math.max(1, current?.rest_seconds || 60);
     const timer = setInterval(() => {
       setSecondsLeft(prev => {
         if (prev <= 1) {
           setIsRunning(false);
-          return 0;
+          return resetValue;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [isRunning]);
+  }, [isRunning, current?.rest_seconds]);
 
   const completedCount = useMemo(() => items.filter(i => i.is_completed).length, [items]);
 

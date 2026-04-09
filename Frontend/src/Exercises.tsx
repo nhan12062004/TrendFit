@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from './lib/supabase';
 import { useAuth } from './contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { estimateExerciseKcalRealistic } from './utils/kcal';
 
 interface SessionExercise {
   id: string;
@@ -21,6 +22,12 @@ interface SessionExercise {
   rest_seconds: number;
   order_index: number;
   is_completed: boolean;
+  exercises?: {
+    name?: string;
+    gif_url?: string;
+    target_muscle?: string;
+    body_part?: string;
+  } | null;
 }
 
 interface ExerciseLibraryItem {
@@ -30,6 +37,43 @@ interface ExerciseLibraryItem {
   target_muscle: string;
   gif_url: string;
 }
+
+const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+const getDatePartsInTimeZone = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value || '1970';
+  const month = parts.find((p) => p.type === 'month')?.value || '01';
+  const day = parts.find((p) => p.type === 'day')?.value || '01';
+  return { year, month, day };
+};
+
+const getVietnamDateKey = (date = new Date()): string => {
+  const { year, month, day } = getDatePartsInTimeZone(date, VIETNAM_TIMEZONE);
+  return `${year}-${month}-${day}`;
+};
+
+const getVietnamDayIndex = (date = new Date()): number => {
+  const dayName = new Intl.DateTimeFormat('en-US', {
+    timeZone: VIETNAM_TIMEZONE,
+    weekday: 'short'
+  }).format(date);
+  const mapping: Record<string, number> = {
+    Mon: 0,
+    Tue: 1,
+    Wed: 2,
+    Thu: 3,
+    Fri: 4,
+    Sat: 5,
+    Sun: 6
+  };
+  return mapping[dayName] ?? 0;
+};
 
 const getWeekStartKey = (baseDate: Date): string => {
   const date = new Date(baseDate);
@@ -56,6 +100,16 @@ const isWeekStartColumnError = (error: any): boolean => {
   return msg.includes('week_start_date') || details.includes('week_start_date');
 };
 
+const pickLatestPlan = (plans: any[] | null | undefined) => {
+  if (!plans || plans.length === 0) return null;
+  return [...plans].sort((a, b) => {
+    const aTime = new Date(a.updated_at || a.created_at || 0).getTime();
+    const bTime = new Date(b.updated_at || b.created_at || 0).getTime();
+    if (bTime !== aTime) return bTime - aTime;
+    return String(b.id || '').localeCompare(String(a.id || ''));
+  })[0];
+};
+
 export default function Exercises() {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
@@ -64,19 +118,57 @@ export default function Exercises() {
   const [session, setSession] = useState<SessionExercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [isSavingExercise, setIsSavingExercise] = useState(false);
   const [search, setSearch] = useState('');
   const [library, setLibrary] = useState<ExerciseLibraryItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'today' | 'library'>('today');
+  const [vnToday, setVnToday] = useState(() => getVietnamDateKey());
+  const [userWeightKg, setUserWeightKg] = useState(70);
+  const [selectedExercise, setSelectedExercise] = useState<ExerciseLibraryItem | null>(null);
+  const [draftSets, setDraftSets] = useState(3);
+  const [draftReps, setDraftReps] = useState('12');
+  const [draftKgInput, setDraftKgInput] = useState('20');
+  const [draftKcal, setDraftKcal] = useState(50);
 
-  const today = new Date().toISOString().split('T')[0];
-  const dayOfWeek = (new Date().getDay() + 6) % 7; // Map Sun=0 to Mon=0 logic (approx, adjusting to my 0=Mon logic)
-  // Actually, new Date().getDay() returns 0 for Sunday.
-  // My DAYS array: 0=Mon, 1=Tue... 6=Sun.
-  const currentDayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+  const currentDayIdx = getVietnamDayIndex();
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const nextVnToday = getVietnamDateKey();
+      setVnToday(prev => (prev === nextVnToday ? prev : nextVnToday));
+    }, 30000);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (user) loadSession();
+  }, [user, vnToday]);
+
+  useEffect(() => {
+    const loadWeight = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('body_metrics')
+        .select('weight')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setUserWeightKg(Math.max(45, Number(data?.weight || 70)));
+    };
+    loadWeight();
   }, [user]);
+
+  useEffect(() => {
+    if (!selectedExercise) return;
+    const kcal = estimateExerciseKcalRealistic({
+      exercise: selectedExercise,
+      sets: draftSets,
+      repsText: draftReps,
+      externalLoadKg: Number(draftKgInput) || 0,
+      userWeightKg
+    });
+    setDraftKcal(kcal);
+  }, [selectedExercise, draftSets, draftReps, draftKgInput, userWeightKg]);
 
   const loadSession = async () => {
     setIsLoading(true);
@@ -86,10 +178,10 @@ export default function Exercises() {
         .from('daily_exercise_sessions')
         .select(`
           *,
-          exercises:exercise_id (name, gif_url)
+          exercises:exercise_id (name, gif_url, target_muscle, body_part)
         `)
         .eq('user_id', user?.id)
-        .eq('log_date', today)
+        .eq('log_date', vnToday)
         .order('order_index');
 
       if (existingSession && existingSession.length > 0) {
@@ -122,7 +214,7 @@ export default function Exercises() {
   };
 
   const clonePlanToToday = async () => {
-    const weekStartKey = getWeekStartKey(new Date(today));
+    const weekStartKey = getWeekStartKey(new Date(`${vnToday}T00:00:00`));
     let plan: any = null;
     const byWeek = await supabase
       .from('weekly_plans')
@@ -154,7 +246,7 @@ export default function Exercises() {
       if (planExercises && planExercises.length > 0 && !planExercises[0].is_rest_day) {
         const sessionItems = planExercises.map((p, idx) => ({
           user_id: user?.id,
-          log_date: today,
+          log_date: vnToday,
           exercise_id: p.exercise_id,
           sets: p.sets,
           reps: p.reps,
@@ -169,7 +261,7 @@ export default function Exercises() {
           .insert(sessionItems)
           .select(`
             *,
-            exercises:exercise_id (name, gif_url)
+            exercises:exercise_id (name, gif_url, target_muscle, body_part)
           `);
 
         if (inserted) {
@@ -195,40 +287,212 @@ export default function Exercises() {
 
   const deleteExercise = async (id: string) => {
     if (!confirm(t('common.confirm_delete', 'Are you sure?'))) return;
+    const removedItem = session.find(s => s.id === id);
     setSession(prev => prev.filter(s => s.id !== id));
+
     await supabase.from('daily_exercise_sessions').delete().eq('id', id);
+
+    // Keep Workout Creator in sync: remove one matching exercise
+    // from weekly_plan_exercises of current VN week/day.
+    if (removedItem?.exercise_id && user?.id) {
+      const weekStartKey = getWeekStartKey(new Date(`${vnToday}T00:00:00`));
+      let weeklyPlanId: string | null = null;
+
+      const byWeek = await supabase
+        .from('weekly_plans')
+        .select('id, created_at, updated_at')
+        .eq('user_id', user.id)
+        .eq('week_start_date', weekStartKey)
+        .limit(20);
+
+      if (byWeek.error && isWeekStartColumnError(byWeek.error)) {
+        const fallback = await supabase
+          .from('weekly_plans')
+          .select('id, created_at, updated_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        weeklyPlanId = fallback.data?.id || null;
+      } else if (byWeek.error) {
+        weeklyPlanId = null;
+      } else {
+        weeklyPlanId = pickLatestPlan(byWeek.data)?.id || null;
+      }
+
+      if (weeklyPlanId) {
+        const toDelete = await supabase
+          .from('weekly_plan_exercises')
+          .select('id')
+          .eq('weekly_plan_id', weeklyPlanId)
+          .eq('day_of_week', currentDayIdx)
+          .eq('exercise_id', removedItem.exercise_id)
+          .order('order_index', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (toDelete.data?.id) {
+          await supabase.from('weekly_plan_exercises').delete().eq('id', toDelete.data.id);
+        }
+      }
+    }
   };
 
   const addExerciseToToday = async (ex: ExerciseLibraryItem) => {
-    const newItem = {
-      user_id: user?.id,
-      log_date: today,
-      exercise_id: ex.id,
-      sets: 3,
-      reps: '12',
-      weight_kg: 0,
-      rest_seconds: 60,
-      order_index: session.length,
-      is_completed: false
-    };
+    setSelectedExercise(ex);
+    setDraftSets(3);
+    setDraftReps('12');
+    setDraftKgInput('20');
+    setDraftKcal(50);
+  };
 
-    const { data, error } = await supabase
-      .from('daily_exercise_sessions')
-      .insert(newItem)
-      .select(`
-        *,
-        exercises:exercise_id (name, gif_url)
-      `)
-      .single();
+  const saveExerciseFromPopup = async () => {
+    if (!user || !selectedExercise) return;
+    setIsSavingExercise(true);
+    try {
+      const cleanSets = Math.max(1, Number(draftSets) || 1);
+      const cleanReps = String(draftReps || '12').trim() || '12';
+      const cleanKg = Math.max(0, Number(draftKgInput) || 0);
+      const cleanKcal = estimateExerciseKcalRealistic({
+        exercise: selectedExercise,
+        sets: cleanSets,
+        repsText: cleanReps,
+        externalLoadKg: cleanKg,
+        userWeightKg,
+        restSeconds: 60
+      });
 
-    if (data) {
-      setSession(prev => [...prev, {
-        ...data,
-        name: (data.exercises as any)?.name || 'Exercise',
-        gif_url: normalizeGifUrl((data.exercises as any)?.gif_url)
-      }]);
-      setActiveTab('today');
+      // Save today's exercise session
+      const { data, error } = await supabase
+        .from('daily_exercise_sessions')
+        .insert({
+          user_id: user.id,
+          log_date: vnToday,
+          exercise_id: selectedExercise.id,
+          sets: cleanSets,
+          reps: cleanReps,
+          weight_kg: cleanKg,
+          rest_seconds: 60,
+          order_index: session.length,
+          is_completed: false
+        })
+        .select(`
+          *,
+        exercises:exercise_id (name, gif_url, target_muscle, body_part)
+        `)
+        .single();
+      if (error) throw error;
+
+      // Keep kcal from popup in daily progress summary
+      const progress = await supabase
+        .from('daily_progress_logs')
+        .select('calories_burned')
+        .eq('user_id', user.id)
+        .eq('log_date', vnToday)
+        .maybeSingle();
+      if (progress.error) throw progress.error;
+      const nextBurned = (progress.data?.calories_burned || 0) + cleanKcal;
+      const upsertProgress = await supabase
+        .from('daily_progress_logs')
+        .upsert(
+          { user_id: user.id, log_date: vnToday, calories_burned: nextBurned },
+          { onConflict: 'user_id,log_date' }
+        );
+      if (upsertProgress.error) throw upsertProgress.error;
+
+      // Sync to Workout Creator (weekly plan of current week/day)
+      const weekStartKey = getWeekStartKey(new Date(`${vnToday}T00:00:00`));
+      let weeklyPlanId: string | null = null;
+      const byWeek = await supabase
+        .from('weekly_plans')
+        .select('id, created_at, updated_at')
+        .eq('user_id', user.id)
+        .eq('week_start_date', weekStartKey)
+        .limit(20);
+
+      if (byWeek.error && isWeekStartColumnError(byWeek.error)) {
+        const fallbackPlan = await supabase
+          .from('weekly_plans')
+          .select('id, created_at, updated_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (fallbackPlan.error) throw fallbackPlan.error;
+        weeklyPlanId = fallbackPlan.data?.id || null;
+      } else if (byWeek.error) {
+        throw byWeek.error;
+      } else {
+        weeklyPlanId = pickLatestPlan(byWeek.data)?.id || null;
+      }
+
+      if (!weeklyPlanId) {
+        const create = await supabase
+          .from('weekly_plans')
+          .insert({
+            user_id: user.id,
+            name: 'Workout Creator',
+            week_start_date: weekStartKey
+          })
+          .select('id')
+          .single();
+        if (create.error && isWeekStartColumnError(create.error)) {
+          const createFallback = await supabase
+            .from('weekly_plans')
+            .insert({
+              user_id: user.id,
+              name: 'Workout Creator'
+            })
+            .select('id')
+            .single();
+          if (createFallback.error) throw createFallback.error;
+          weeklyPlanId = createFallback.data.id;
+        } else if (create.error) {
+          throw create.error;
+        } else {
+          weeklyPlanId = create.data.id;
+        }
+      }
+
+      const orderRes = await supabase
+        .from('weekly_plan_exercises')
+        .select('order_index')
+        .eq('weekly_plan_id', weeklyPlanId)
+        .eq('day_of_week', currentDayIdx)
+        .order('order_index', { ascending: false })
+        .limit(1);
+      if (orderRes.error) throw orderRes.error;
+      const nextOrder = (orderRes.data?.[0]?.order_index ?? -1) + 1;
+
+      const addToCreator = await supabase
+        .from('weekly_plan_exercises')
+        .insert({
+          weekly_plan_id: weeklyPlanId,
+          day_of_week: currentDayIdx,
+          exercise_id: selectedExercise.id,
+          sets: cleanSets,
+          reps: cleanReps,
+          weight_kg: cleanKg,
+          rest_seconds: 60,
+          order_index: nextOrder,
+          is_rest_day: false
+        });
+      if (addToCreator.error) throw addToCreator.error;
+
+      if (data) {
+        setSession(prev => [...prev, {
+          ...data,
+          name: (data.exercises as any)?.name || 'Exercise',
+          gif_url: normalizeGifUrl((data.exercises as any)?.gif_url)
+        }]);
+      }
+      setIsAdding(false);
+      setSelectedExercise(null);
       alert(t('sidebar.exercise_added_today'));
+    } catch (e: any) {
+      alert((t('common.error', 'Lỗi') + ': ') + (e?.message || 'Save exercise failed'));
+    } finally {
+      setIsSavingExercise(false);
     }
   };
 
@@ -241,90 +505,130 @@ export default function Exercises() {
         <div>
           <h1 className="text-3xl font-black text-text-primary uppercase flex items-center gap-2">
             <Dumbbell className="w-8 h-8 text-[#a3e635]" />
-            {t('sidebar.today_routine')}
+            {t('sidebar.exercises_tracker', 'Exercises Tracker')}
           </h1>
-          <p className="text-sm text-text-tertiary mt-1 font-medium">{new Date().toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <p className="text-sm text-text-tertiary mt-1 font-medium">
+            {new Intl.DateTimeFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
+              timeZone: VIETNAM_TIMEZONE,
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long'
+            }).format(new Date())}
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-bg-secondary p-1 rounded-2xl border border-border-primary">
-          <button 
-            onClick={() => setActiveTab('today')}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'today' ? 'bg-[#a3e635] text-black' : 'text-text-tertiary hover:text-text-primary'}`}
-          >
-            {t('common.today', 'Hôm nay')}
-          </button>
-          <button 
-            onClick={() => setActiveTab('library')}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'library' ? 'bg-[#a3e635] text-black' : 'text-text-tertiary hover:text-text-primary'}`}
-          >
+        <button
+          onClick={() => setIsAdding(true)}
+          className="w-full md:w-auto px-6 py-2.5 rounded-xl text-sm font-black bg-[#a3e635] text-black hover:bg-[#bef264] transition-all"
+        >
+          <span className="inline-flex items-center justify-center gap-2">
+            <Plus className="w-4 h-4" />
             {t('common.add_new', 'Thêm mới')}
-          </button>
-        </div>
+          </span>
+        </button>
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden">
-      <AnimatePresence mode="wait">
-        {activeTab === 'today' ? (
-          <motion.div 
-            key="today"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-4 h-full overflow-y-auto custom-scrollbar pr-1"
-          >
+        <motion.div
+          key="today"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4 h-full overflow-y-auto custom-scrollbar pr-1"
+        >
             {session.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
-                {session.map((ex) => (
-                  <div 
-                    key={ex.id}
-                    className={`bg-bg-secondary border rounded-3xl p-4 md:p-6 transition-all duration-500 ease-out group hover:border-[#a3e635]/50 ${
-                      ex.is_completed ? 'border-[#a3e635]/20 bg-[#a3e635]/5' : 'border-border-primary'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4 md:gap-6">
-                      <button 
-                        onClick={() => toggleComplete(ex.id, ex.is_completed)}
-                        className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center transition-all duration-300 ${
-                          ex.is_completed ? 'text-[#a3e635]' : 'text-text-tertiary'
-                        }`}
-                      >
-                        {ex.is_completed ? <CheckCircle2 className="w-7 h-7" /> : <Circle className="w-7 h-7" />}
-                      </button>
+                {session.map((ex) => {
+                  const displayKcal = estimateExerciseKcalRealistic({
+                    exercise: {
+                      target_muscle: (ex as any).exercises?.target_muscle || '',
+                      body_part: (ex as any).exercises?.body_part || ''
+                    },
+                    sets: ex.sets,
+                    repsText: ex.reps,
+                    externalLoadKg: Number(ex.weight_kg || 0),
+                    userWeightKg,
+                    restSeconds: ex.rest_seconds
+                  });
+                  return (
+                    <div key={ex.id} className="bg-bg-secondary border border-border-primary rounded-2xl p-2.5 sm:p-4 group hover:border-border-secondary transition-colors">
+                      <div className="sm:hidden">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleComplete(ex.id, ex.is_completed)}
+                            className={`text-text-tertiary hover:text-text-primary transition-colors ${ex.is_completed ? 'text-[#a3e635]' : ''}`}
+                          >
+                            {ex.is_completed ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+                          </button>
+                          <h3 className={`text-sm font-bold uppercase truncate flex-1 ${ex.is_completed ? 'text-text-tertiary line-through' : 'text-text-primary'}`}>{ex.name}</h3>
+                          <button
+                            onClick={() => deleteExercise(ex.id)}
+                            className="p-1.5 text-text-tertiary hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4.5 h-4.5" />
+                          </button>
+                        </div>
 
-                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-bg-tertiary overflow-hidden shrink-0 border border-border-primary">
-                        <img src={ex.gif_url} alt={ex.name} className="w-full h-full object-cover" />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h3 className={`text-base md:text-lg font-black uppercase transition-all ${ex.is_completed ? 'text-text-tertiary line-through' : 'text-text-primary'}`}>
-                          {ex.name}
-                        </h3>
-                        
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-text-tertiary font-black uppercase tracking-widest">{t('workout_builder.sets')}</span>
-                            <span className="text-sm font-bold text-text-primary">{ex.sets}</span>
+                        <div className="mt-2 flex items-start gap-2.5">
+                          <div className="w-12 h-12 rounded-xl bg-bg-tertiary overflow-hidden border border-border-primary shrink-0 flex items-center justify-center">
+                            <Dumbbell className="w-5 h-5 text-text-tertiary" />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-text-tertiary font-black uppercase tracking-widest">{t('workout_builder.reps')}</span>
-                            <span className="text-sm font-bold text-text-primary">{ex.reps}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-text-tertiary font-black uppercase tracking-widest">{t('workout_builder.weight')}</span>
-                            <span className="text-sm font-bold text-[#a3e635]">{ex.weight_kg} kg</span>
+                          <div className="flex-1 grid grid-cols-2 gap-2">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.sets')}</span>
+                              <div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm text-text-primary font-bold">{ex.sets}</div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.reps')}</span>
+                              <div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm text-text-primary font-bold">{ex.reps}</div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">KG</span>
+                              <div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm text-text-primary font-bold">{ex.weight_kg}</div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">REST (S)</span>
+                              <div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm text-text-primary font-bold">{ex.rest_seconds}</div>
+                            </div>
+                            <div className="flex flex-col gap-1 col-span-2">
+                              <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">KCAL</span>
+                              <div className="h-[34px] rounded-lg bg-[#a3e635]/10 border border-[#a3e635]/30 text-[#a3e635] flex items-center justify-center">
+                                <span className="text-xs font-black tabular-nums">{displayKcal}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      <button 
-                        onClick={() => deleteExercise(ex.id)}
-                        className="p-2 text-text-tertiary hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all h-fit"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="hidden sm:flex sm:items-center gap-4">
+                        <button
+                          onClick={() => toggleComplete(ex.id, ex.is_completed)}
+                          className={`text-text-tertiary hover:text-text-primary transition-colors ${ex.is_completed ? 'text-[#a3e635]' : ''}`}
+                        >
+                          {ex.is_completed ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+                        </button>
+                        <div className="w-16 h-16 rounded-xl bg-bg-tertiary overflow-hidden border border-border-primary shrink-0 flex items-center justify-center">
+                          <Dumbbell className="w-6 h-6 text-text-tertiary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`text-sm font-bold uppercase truncate ${ex.is_completed ? 'text-text-tertiary line-through' : 'text-text-primary'}`}>{ex.name}</h3>
+                          <div className="flex flex-wrap gap-4 mt-2.5">
+                            <div className="flex flex-col gap-1"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.sets')}</span><div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 text-text-primary font-bold">{ex.sets}</div></div>
+                            <div className="flex flex-col gap-1"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.reps')}</span><div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 text-text-primary font-bold">{ex.reps}</div></div>
+                            <div className="flex flex-col gap-1"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">KG</span><div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 text-text-primary font-bold">{ex.weight_kg}</div></div>
+                            <div className="flex flex-col gap-1"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">REST (S)</span><div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 text-text-primary font-bold">{ex.rest_seconds}</div></div>
+                            <div className="flex flex-col gap-1 ml-auto"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">KCAL</span><div className="h-[34px] min-w-[76px] px-2 rounded-lg bg-[#a3e635]/10 border border-[#a3e635]/30 text-[#a3e635] flex items-center justify-center"><span className="text-xs font-black tabular-nums">{displayKcal}</span></div></div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => deleteExercise(ex.id)}
+                          className="p-2 text-text-tertiary hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* Session Summary Card */}
                 <div className="mt-8 bg-bg-secondary border border-border-primary rounded-3xl p-6 relative overflow-hidden group hover:border-[#a3e635] transition-all">
@@ -368,7 +672,7 @@ export default function Exercises() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <button 
-                    onClick={() => setActiveTab('library')}
+                    onClick={() => setIsAdding(true)}
                     className="px-8 py-3 bg-[#a3e635] text-black rounded-2xl font-black uppercase text-sm hover:scale-105 transition-all shadow-lg shadow-[#a3e635]/20"
                   >
                     {t('common.add_new')}
@@ -382,20 +686,43 @@ export default function Exercises() {
                 </div>
               </div>
             )}
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="library"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-4 h-full overflow-hidden"
+        </motion.div>
+      </div>
+
+      <AnimatePresence>
+        {isAdding ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm p-4 md:p-8"
+            onClick={() => setIsAdding(false)}
           >
-            <div className="bg-bg-secondary border border-border-primary rounded-[32px] p-4 md:p-6 h-full min-h-0 flex flex-col">
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.98 }}
+              transition={{ duration: 0.18 }}
+              className="bg-bg-secondary border border-border-primary rounded-[28px] p-4 md:p-6 h-full max-w-5xl mx-auto flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
+                <h3 className="text-base md:text-lg font-black uppercase tracking-wide text-text-primary">
+                  {t('common.add_new', 'Thêm mới')}
+                </h3>
+                <button
+                  onClick={() => setIsAdding(false)}
+                  className="w-9 h-9 rounded-xl bg-bg-tertiary border border-border-primary text-text-secondary hover:text-text-primary text-xl leading-none"
+                  aria-label="Close add exercise popup"
+                >
+                  ×
+                </button>
+              </div>
+
               <div className="relative mb-4 md:mb-6 shrink-0">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder={t('sidebar.search_exercises')}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -403,11 +730,15 @@ export default function Exercises() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1">
                 {library.filter(ex => ex.name.toLowerCase().includes(search.toLowerCase())).map((ex) => (
-                  <div 
+                  <div
                     key={ex.id}
-                    className="bg-bg-tertiary border border-border-primary rounded-2xl p-4 flex items-center gap-4 group hover:border-[#a3e635] transition-all cursor-pointer"
+                    className={`bg-bg-tertiary border rounded-2xl p-4 flex items-center gap-4 group transition-all cursor-pointer ${
+                      selectedExercise?.id === ex.id
+                        ? 'border-[#a3e635] ring-1 ring-[#a3e635]/40'
+                        : 'border-border-primary hover:border-[#a3e635]'
+                    }`}
                     onClick={() => addExerciseToToday(ex)}
                   >
                     <div className="w-14 h-14 rounded-xl overflow-hidden bg-bg-secondary shrink-0">
@@ -423,11 +754,76 @@ export default function Exercises() {
                   </div>
                 ))}
               </div>
-            </div>
+
+              <div className="mt-4 border-t border-border-primary pt-4 shrink-0">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Sets</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={draftSets}
+                      onChange={(e) => setDraftSets(parseInt(e.target.value || '1', 10))}
+                      className="bg-bg-tertiary border border-border-primary rounded-xl px-3 py-2 text-sm text-text-primary focus:border-[#a3e635] outline-none"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Reps</span>
+                    <input
+                      type="text"
+                      value={draftReps}
+                      onChange={(e) => setDraftReps(e.target.value)}
+                      className="bg-bg-tertiary border border-border-primary rounded-xl px-3 py-2 text-sm text-text-primary focus:border-[#a3e635] outline-none"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">KG</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={draftKgInput}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                        const [intPartRaw = '', ...decimalParts] = raw.split('.');
+                        const intPart = intPartRaw.replace(/^0+(?=\d)/, '');
+                        const decimalPart = decimalParts.join('');
+                        const normalized = decimalParts.length > 0
+                          ? `${intPart || '0'}.${decimalPart}`
+                          : intPart;
+                        setDraftKgInput(normalized);
+                      }}
+                      className="bg-bg-tertiary border border-border-primary rounded-xl px-3 py-2 text-sm text-text-primary focus:border-[#a3e635] outline-none"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">KCAL</span>
+                    <input
+                      type="number"
+                      value={draftKcal}
+                      readOnly
+                      className="bg-bg-tertiary border border-border-primary rounded-xl px-3 py-2 text-sm text-[#a3e635] font-bold focus:border-[#a3e635] outline-none"
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <p className="text-xs text-text-tertiary truncate">
+                    {selectedExercise ? `Selected: ${selectedExercise.name}` : 'Select an exercise to continue'}
+                  </p>
+                  <button
+                    onClick={saveExerciseFromPopup}
+                    disabled={!selectedExercise || isSavingExercise}
+                    className="h-10 px-5 rounded-xl bg-[#a3e635] text-black font-black text-xs md:text-sm uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#bef264] transition-all"
+                  >
+                    {isSavingExercise ? 'Saving...' : 'Save exercise'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
-      </div>
     </div>
   );
 }

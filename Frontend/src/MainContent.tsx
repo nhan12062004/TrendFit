@@ -7,6 +7,96 @@ import { useTranslation } from 'react-i18next';
 
 import { useOutletContext } from 'react-router-dom';
 
+const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+const getDatePartsInTimeZone = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value || '1970';
+  const month = parts.find((p) => p.type === 'month')?.value || '01';
+  const day = parts.find((p) => p.type === 'day')?.value || '01';
+  return { year, month, day };
+};
+
+const getVietnamDateKey = (date = new Date()): string => {
+  const { year, month, day } = getDatePartsInTimeZone(date, VIETNAM_TIMEZONE);
+  return `${year}-${month}-${day}`;
+};
+
+const getVietnamWeekRange = (date = new Date()) => {
+  const todayKey = getVietnamDateKey(date);
+  const todayDate = new Date(`${todayKey}T00:00:00`);
+  const day = todayDate.getDay(); // Sun=0 ... Sat=6
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const weekStart = new Date(todayDate);
+  weekStart.setDate(todayDate.getDate() + diffToMonday);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  return {
+    weekStartKey: getVietnamDateKey(weekStart),
+    weekEndKey: getVietnamDateKey(weekEnd)
+  };
+};
+
+const addDaysToDateKey = (dateKey: string, days: number): string => {
+  const d = new Date(`${dateKey}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return getVietnamDateKey(d);
+};
+
+const calculateWorkoutStreak = (completedDateKeys: string[], todayKey: string): number => {
+  const completedSet = new Set(completedDateKeys);
+  let streak = 0;
+  let cursor = todayKey;
+
+  // If today has no completed workout, streak starts from yesterday.
+  if (!completedSet.has(cursor)) {
+    cursor = addDaysToDateKey(cursor, -1);
+  }
+
+  while (completedSet.has(cursor)) {
+    streak += 1;
+    cursor = addDaysToDateKey(cursor, -1);
+  }
+
+  return streak;
+};
+
+const getDateKeyList = (startKey: string, days: number): string[] => {
+  return Array.from({ length: days }, (_, i) => addDaysToDateKey(startKey, i));
+};
+
+const buildSparklinePath = (values: number[]): string => {
+  const width = 100;
+  const height = 30;
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = Math.max(1, max - min);
+  const points = values.map((v, i) => {
+    const x = (i / Math.max(1, values.length - 1)) * width;
+    const y = height - ((v - min) / range) * (height - 4) - 2;
+    return { x, y };
+  });
+
+  if (points.length <= 1) return `M0,${height / 2} L${width},${height / 2}`;
+
+  let d = `M${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+  for (let i = 1; i < points.length; i += 1) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const cp1x = prev.x + (curr.x - prev.x) * 0.35;
+    const cp1y = prev.y;
+    const cp2x = prev.x + (curr.x - prev.x) * 0.65;
+    const cp2y = curr.y;
+    d += ` C${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${curr.x.toFixed(2)},${curr.y.toFixed(2)}`;
+  }
+  return d;
+};
+
 
 export default function MainContent() {
   const { onProfileClick } = useOutletContext<{ onProfileClick: () => void }>();
@@ -25,6 +115,12 @@ export default function MainContent() {
     total_minutes: 0,
     streak: 1
   });
+  const [weeklyTrend, setWeeklyTrend] = useState({
+    workouts: [0, 0, 0, 0, 0, 0, 0],
+    calories: [0, 0, 0, 0, 0, 0, 0],
+    minutes: [0, 0, 0, 0, 0, 0, 0]
+  });
+  const [liveTick, setLiveTick] = useState(0);
 
   const parseReps = (reps: string | null | undefined): number => {
     if (!reps) return 10;
@@ -57,14 +153,22 @@ export default function MainContent() {
       setLoading(true);
       try {
         const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
+        const todayStr = getVietnamDateKey(today);
+        const { weekStartKey, weekEndKey } = getVietnamWeekRange(today);
         
         // 1. Lấy dữ liệu ngày hôm nay
-        const [lifestyleRes, progressLogRes, latestBodyRes, todaySessionsRes] = await Promise.all([
+        const [lifestyleRes, progressLogRes, latestBodyRes, todaySessionsRes, completedDaysRes] = await Promise.all([
           supabase.from('lifestyle_settings').select('workout_duration, weekly_workouts').eq('user_id', user.id).maybeSingle(),
           supabase.from('daily_progress_logs').select('calories_burned, workout_duration').eq('user_id', user.id).eq('log_date', todayStr).maybeSingle(),
           supabase.from('body_metrics').select('weight').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-          supabase.from('daily_exercise_sessions').select('sets, reps, weight_kg, rest_seconds, is_completed').eq('user_id', user.id).eq('log_date', todayStr)
+          supabase.from('daily_exercise_sessions').select('sets, reps, weight_kg, rest_seconds, is_completed').eq('user_id', user.id).eq('log_date', todayStr),
+          supabase
+            .from('daily_exercise_sessions')
+            .select('log_date')
+            .eq('user_id', user.id)
+            .eq('is_completed', true)
+            .order('log_date', { ascending: false })
+            .limit(180)
         ]);
 
         const userWeight = Number(latestBodyRes.data?.weight || 70);
@@ -78,52 +182,75 @@ export default function MainContent() {
         if (lifestyleRes.data || todaySessions.length > 0) {
           setStats(prev => ({
             ...prev,
-            workout_duration: progressLogRes.data?.workout_duration || Math.round(completedSessions.length * 8),
-            calories_burned: progressLogRes.data?.calories_burned ?? estimatedCaloriesFromSessions,
-            // Card này đang đặt nhãn Workout, ưu tiên hiển thị bài tập hôm nay
-            remaining_workouts: todaySessions.length > 0
-              ? todaySessions.length
-              : (lifestyleRes.data?.weekly_workouts || 0)
+            // Keep these cards consistent with Exercises page (today sessions only)
+            workout_duration: Math.round(completedSessions.length * 8),
+            calories_burned: estimatedCaloriesFromSessions,
+            remaining_workouts: todaySessions.length
           }));
         }
 
-        // 2. Lấy dữ liệu 7 ngày gần nhất cho Tổng hợp hàng tuần
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(today.getDate() - 7);
-        const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
-
+        // 2. Lấy dữ liệu tuần hiện tại cho Tổng hợp hàng tuần
         const [{ data: weeklyLogs }, { data: weeklySessions }] = await Promise.all([
           supabase
           .from('daily_progress_logs')
           .select('calories_burned, workout_duration, log_date')
           .eq('user_id', user.id)
-          .gte('log_date', sevenDaysAgoStr)
-          .lte('log_date', todayStr),
+          .gte('log_date', weekStartKey)
+          .lte('log_date', weekEndKey),
           supabase
           .from('daily_exercise_sessions')
           .select('sets, reps, weight_kg, rest_seconds, is_completed, log_date')
           .eq('user_id', user.id)
-          .gte('log_date', sevenDaysAgoStr)
-          .lte('log_date', todayStr)
+          .gte('log_date', weekStartKey)
+          .lte('log_date', weekEndKey)
         ]);
 
-        if ((weeklyLogs && weeklyLogs.length > 0) || (weeklySessions && weeklySessions.length > 0)) {
-          const totalCaloriesFromLogs = (weeklyLogs || []).reduce((sum, log) => sum + (log.calories_burned || 0), 0);
-          const totalCaloriesFromSessions = (weeklySessions || [])
-            .filter((item: any) => !!item.is_completed)
-            .reduce((sum: number, item: any) => sum + estimateExerciseKcal(item, userWeight), 0);
+        const totalCaloriesFromLogs = (weeklyLogs || []).reduce((sum, log) => sum + (log.calories_burned || 0), 0);
+        const totalCaloriesFromSessions = (weeklySessions || [])
+          .filter((item: any) => !!item.is_completed)
+          .reduce((sum: number, item: any) => sum + estimateExerciseKcal(item, userWeight), 0);
 
-          const totalCalories = totalCaloriesFromLogs > 0 ? totalCaloriesFromLogs : totalCaloriesFromSessions;
-          const totalMinutes = weeklyLogs.reduce((sum, log) => sum + (log.workout_duration || 0), 0);
-          const completedWorkouts = (weeklySessions || []).filter((item: any) => !!item.is_completed).length;
+        const completedWorkouts = (weeklySessions || []).filter((item: any) => !!item.is_completed).length;
+        const totalCalories = totalCaloriesFromLogs > 0 ? totalCaloriesFromLogs : totalCaloriesFromSessions;
+        const totalMinutes = completedWorkouts * 8;
+        const completedDateKeys = Array.from(
+          new Set((completedDaysRes.data || []).map((row: any) => String(row.log_date || '')).filter(Boolean))
+        );
+        const streakDays = calculateWorkoutStreak(completedDateKeys, todayStr);
 
-          setWeeklyStats({
-            total_workouts: completedWorkouts,
-            total_calories: totalCalories,
-            total_minutes: totalMinutes,
-            streak: profile?.streak_days || 1
-          });
-        }
+        const weekKeys = getDateKeyList(weekStartKey, 7);
+        const workoutByDay: Record<string, number> = {};
+        const caloriesByDay: Record<string, number> = {};
+        const minutesByDay: Record<string, number> = {};
+
+        (weeklySessions || []).forEach((s: any) => {
+          const key = String(s.log_date || '');
+          workoutByDay[key] = (workoutByDay[key] || 0) + 1;
+          if (s.is_completed) {
+            const kcal = estimateExerciseKcal(s, userWeight);
+            caloriesByDay[key] = (caloriesByDay[key] || 0) + kcal;
+            minutesByDay[key] = (minutesByDay[key] || 0) + 8;
+          }
+        });
+
+        (weeklyLogs || []).forEach((log: any) => {
+          const key = String(log.log_date || '');
+          if (Number(log.calories_burned || 0) > 0) caloriesByDay[key] = Number(log.calories_burned || 0);
+          if (Number(log.workout_duration || 0) > 0) minutesByDay[key] = Number(log.workout_duration || 0);
+        });
+
+        setWeeklyTrend({
+          workouts: weekKeys.map((k) => workoutByDay[k] || 0),
+          calories: weekKeys.map((k) => caloriesByDay[k] || 0),
+          minutes: weekKeys.map((k) => minutesByDay[k] || 0)
+        });
+
+        setWeeklyStats({
+          total_workouts: completedWorkouts,
+          total_calories: totalCalories,
+          total_minutes: totalMinutes,
+          streak: streakDays
+        });
       } catch (e) { 
         console.error(e); 
       } finally {
@@ -135,7 +262,16 @@ export default function MainContent() {
     } else {
       setLoading(false);
     }
-  }, [user, isLoggedIn, refreshTick, profile]);
+  }, [user, isLoggedIn, refreshTick, profile, liveTick]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const id = window.setInterval(() => {
+      // trigger refetch in near real-time cadence
+      setLiveTick(prev => prev + 1);
+    }, 15000);
+    return () => window.clearInterval(id);
+  }, [isLoggedIn]);
 
   // Removed internal LoadingScreen as it's now handled by Overview.tsx
   // if (loading) return <LoadingScreen />;
@@ -201,7 +337,7 @@ export default function MainContent() {
               <span className="text-[10px] md:text-sm text-text-tertiary font-medium">{t('dashboard.workouts_unit')}</span>
             </div>
             <svg className="w-16 md:w-24 h-8" viewBox="0 0 100 30">
-              <path d="M0,15 Q10,5 20,15 T40,15 T60,5 80,25 T100,15" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" />
+              <path d={buildSparklinePath(weeklyTrend.workouts)} fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
         </div>
@@ -222,7 +358,7 @@ export default function MainContent() {
               <span className="text-[10px] md:text-sm text-text-tertiary font-medium">Kcal</span>
             </div>
             <svg className="w-16 md:w-24 h-8" viewBox="0 0 100 30">
-              <path d="M0,25 Q15,5 30,20 T60,10 T90,25 T100,15" fill="none" stroke="#ff5e00" strokeWidth="2" strokeLinecap="round" />
+              <path d={buildSparklinePath(weeklyTrend.calories)} fill="none" stroke="#ff5e00" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
         </div>
@@ -243,7 +379,7 @@ export default function MainContent() {
               <span className="text-[10px] md:text-sm text-text-tertiary font-medium">{t('dashboard.minutes_unit')}</span>
             </div>
             <svg className="w-16 md:w-24 h-8" viewBox="0 0 100 30">
-              <path d="M0,15 Q20,25 40,10 T70,20 T100,5" fill="none" stroke="#a3e635" strokeWidth="2" strokeLinecap="round" />
+              <path d={buildSparklinePath(weeklyTrend.minutes)} fill="none" stroke="#a3e635" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
         </div>
@@ -314,7 +450,7 @@ export default function MainContent() {
           <Activity className="w-5 h-5 text-[#a3e635]" />
           <h3 className="text-lg font-bold text-text-primary">{t('dashboard.weekly_summary')}</h3>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center divide-y md:divide-y-0 md:divide-x divide-border-primary">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div className="py-2 md:py-0">
             <p className="text-3xl font-bold text-[#a3e635] mb-1">
               <AnimatedNumber value={weeklyStats.total_workouts} />
@@ -333,7 +469,7 @@ export default function MainContent() {
             </p>
             <p className="text-xs text-text-tertiary font-medium">{t('dashboard.total_minutes')}</p>
           </div>
-          <div className="py-2 md:py-0 border-l-0 md:border-l border-border-primary">
+          <div className="py-2 md:py-0">
             <p className="text-2xl md:text-3xl font-bold text-[#ec4899] mb-1">
               <AnimatedNumber value={weeklyStats.streak} />
             </p>

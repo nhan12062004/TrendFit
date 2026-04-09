@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { supabase } from './lib/supabase';
 import { useAuth } from './contexts/AuthContext';
+import { estimateExerciseKcalRealistic } from './utils/kcal';
 import {
   DndContext,
   closestCenter,
@@ -39,10 +40,12 @@ interface PlanExercise {
   exercise_id: string;
   name: string;
   gif_url: string;
+  target_muscle?: string;
   sets: number;
   reps: number;
   weight_kg: number;
   rest_seconds: number;
+  kcal: number;
   is_rest_day: boolean;
 }
 
@@ -65,6 +68,32 @@ const DAYS = [
 const MUSCLE_GROUPS = [
   'chest', 'back', 'legs', 'shoulders', 'arms', 'abs', 'cardio'
 ];
+const WORKOUT_CREATOR_LABEL_EN = 'Workout Creator';
+const WORKOUT_CREATOR_LABEL_VI = 'Tạo bài tập';
+const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+const getDatePartsInTimeZone = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value || '1970';
+  const month = parts.find((p) => p.type === 'month')?.value || '01';
+  const day = parts.find((p) => p.type === 'day')?.value || '01';
+  return { year, month, day };
+};
+
+const getVietnamDateKey = (date = new Date()): string => {
+  const { year, month, day } = getDatePartsInTimeZone(date, VIETNAM_TIMEZONE);
+  return `${year}-${month}-${day}`;
+};
+
+const getVietnamTodayDate = (): Date => {
+  const key = getVietnamDateKey();
+  return new Date(`${key}T00:00:00`);
+};
 
 const getWeekStart = (baseDate: Date): Date => {
   const date = new Date(baseDate);
@@ -89,8 +118,20 @@ const addDays = (date: Date, days: number): Date => {
 };
 
 const getTodayDayIndex = (): number => {
-  const jsDay = new Date().getDay(); // Sun=0 ... Sat=6
-  return jsDay === 0 ? 6 : jsDay - 1; // Mon=0 ... Sun=6
+  const dayName = new Intl.DateTimeFormat('en-US', {
+    timeZone: VIETNAM_TIMEZONE,
+    weekday: 'short'
+  }).format(new Date());
+  const mapping: Record<string, number> = {
+    Mon: 0,
+    Tue: 1,
+    Wed: 2,
+    Thu: 3,
+    Fri: 4,
+    Sat: 5,
+    Sun: 6
+  };
+  return mapping[dayName] ?? 0;
 };
 
 const pickLatestPlan = (plans: any[] | null | undefined) => {
@@ -107,6 +148,12 @@ const isWeekStartColumnError = (error: any): boolean => {
   const msg = String(error?.message || '').toLowerCase();
   const details = String(error?.details || '').toLowerCase();
   return msg.includes('week_start_date') || details.includes('week_start_date');
+};
+
+const isKcalColumnError = (error: any): boolean => {
+  const msg = String(error?.message || '').toLowerCase();
+  const details = String(error?.details || '').toLowerCase();
+  return msg.includes('kcal') || details.includes('kcal');
 };
 
 const resolveGifUrl = (row: any): string => {
@@ -232,7 +279,7 @@ const SortableRoutineItem = ({
 }: {
   item: PlanExercise,
   onDelete: (tempId: string) => void,
-  onUpdate: (tempId: string, updates: Partial<PlanExercise>) => void
+  onUpdate: (tempId: string, updates: Partial<PlanExercise>, shouldRecalc?: boolean) => void
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.tempId });
   const { t } = useTranslation();
@@ -267,10 +314,11 @@ const SortableRoutineItem = ({
                   value={item.sets === 0 ? '' : item.sets}
                   onChange={(e) => {
                     const raw = e.target.value;
-                    onUpdate(item.tempId, { sets: raw === '' ? 0 : parseInt(raw, 10) || 0 });
+                    onUpdate(item.tempId, { sets: raw === '' ? 0 : parseInt(raw, 10) || 0 }, false);
                   }}
+                  onBlur={() => onUpdate(item.tempId, {}, true)}
                   placeholder="0"
-                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -280,10 +328,11 @@ const SortableRoutineItem = ({
                   value={item.reps === 0 ? '' : item.reps}
                   onChange={(e) => {
                     const raw = e.target.value;
-                    onUpdate(item.tempId, { reps: raw === '' ? 0 : parseInt(raw, 10) || 0 });
+                    onUpdate(item.tempId, { reps: raw === '' ? 0 : parseInt(raw, 10) || 0 }, false);
                   }}
+                  onBlur={() => onUpdate(item.tempId, {}, true)}
                   placeholder="0"
-                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -293,10 +342,11 @@ const SortableRoutineItem = ({
                   value={item.weight_kg === 0 ? '' : item.weight_kg}
                   onChange={(e) => {
                     const raw = e.target.value;
-                    onUpdate(item.tempId, { weight_kg: raw === '' ? 0 : parseFloat(raw) || 0 });
+                    onUpdate(item.tempId, { weight_kg: raw === '' ? 0 : parseFloat(raw) || 0 }, false);
                   }}
+                  onBlur={() => onUpdate(item.tempId, {}, true)}
                   placeholder="0"
-                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -306,11 +356,18 @@ const SortableRoutineItem = ({
                   value={item.rest_seconds === 0 ? '' : item.rest_seconds}
                   onChange={(e) => {
                     const raw = e.target.value;
-                    onUpdate(item.tempId, { rest_seconds: raw === '' ? 0 : parseInt(raw, 10) || 0 });
+                    onUpdate(item.tempId, { rest_seconds: raw === '' ? 0 : parseInt(raw, 10) || 0 }, false);
                   }}
+                  onBlur={() => onUpdate(item.tempId, {}, true)}
                   placeholder="0"
-                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary"
+                  className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-full sm:w-16 focus:border-[#a3e635] outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
+              </div>
+              <div className="flex flex-col gap-1 sm:ml-auto">
+                <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">KCAL</span>
+                <div className="h-[34px] min-w-[76px] px-2 rounded-lg bg-[#a3e635]/10 border border-[#a3e635]/30 text-[#a3e635] flex items-center justify-center transition-none">
+                  <span className="text-xs font-black tabular-nums transition-none">{Math.round(item.kcal || 0)}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -352,6 +409,7 @@ export default function WorkoutBuilder() {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
+  const workoutCreatorLabel = currentLang === 'vi' ? WORKOUT_CREATOR_LABEL_VI : WORKOUT_CREATOR_LABEL_EN;
 
   // State
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -365,9 +423,11 @@ export default function WorkoutBuilder() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeDrag, setActiveDrag] = useState<DraggingPreview | null>(null);
-  const [mobileView, setMobileView] = useState<'plan' | 'library'>('plan');
-  const [selectedWeekStart, setSelectedWeekStart] = useState<Date>(() => getWeekStart(new Date()));
+  const [selectedWeekStart, setSelectedWeekStart] = useState<Date>(() => getWeekStart(getVietnamTodayDate()));
   const [supportsWeekStartDate, setSupportsWeekStartDate] = useState(true);
+  const [supportsKcalColumn, setSupportsKcalColumn] = useState(true);
+  const [userWeightKg, setUserWeightKg] = useState(70);
+  const [isWeightReady, setIsWeightReady] = useState(false);
 
   const selectedWeekKey = useMemo(() => toDateKey(selectedWeekStart), [selectedWeekStart]);
   const selectedWeekLabel = useMemo(() => {
@@ -375,8 +435,25 @@ export default function WorkoutBuilder() {
     end.setDate(selectedWeekStart.getDate() + 6);
     return `${selectedWeekStart.toLocaleDateString(currentLang, { day: '2-digit', month: '2-digit' })} - ${end.toLocaleDateString(currentLang, { day: '2-digit', month: '2-digit' })}`;
   }, [selectedWeekStart, currentLang]);
-  const isCurrentWeek = useMemo(() => selectedWeekKey === toDateKey(getWeekStart(new Date())), [selectedWeekKey]);
-  const todayKey = useMemo(() => toDateKey(new Date()), []);
+  const isCurrentWeek = useMemo(() => selectedWeekKey === toDateKey(getWeekStart(getVietnamTodayDate())), [selectedWeekKey]);
+  const todayKey = useMemo(() => getVietnamDateKey(), [selectedWeekKey]);
+
+  useEffect(() => {
+    // Update immediately on language switch for default label names,
+    // instead of waiting for async plan re-fetch.
+    setPlanName((prev) => {
+      const normalized = String(prev || '').trim();
+      if (
+        !normalized ||
+        normalized === WORKOUT_CREATOR_LABEL_EN ||
+        normalized === WORKOUT_CREATOR_LABEL_VI ||
+        normalized.toLowerCase() === 'workout creator'
+      ) {
+        return workoutCreatorLabel;
+      }
+      return prev;
+    });
+  }, [workoutCreatorLabel]);
 
   const goPrevWeek = () => {
     setSelectedWeekStart(prev => getWeekStart(addDays(prev, -7)));
@@ -412,12 +489,32 @@ export default function WorkoutBuilder() {
     fetchLibrary();
   }, []);
 
+  useEffect(() => {
+    const fetchUserWeight = async () => {
+      if (!user) {
+        setIsWeightReady(true);
+        return;
+      }
+      const { data } = await supabase
+        .from('body_metrics')
+        .select('weight')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setUserWeightKg(Math.max(45, Number(data?.weight || 70)));
+      setIsWeightReady(true);
+    };
+    fetchUserWeight();
+  }, [user]);
+
   // Load selected week plan silently (no full-page spinner)
   useEffect(() => {
     const fetchWeekPlan = async () => {
+      if (!isWeightReady) return;
       try {
         let nextPlanId: string | null = null;
-        let nextPlanName = t('sidebar.creator', 'Tạo bài tập');
+        let nextPlanName = workoutCreatorLabel;
         let nextWeeklyPlan: Record<number, PlanExercise[]> = {};
         let nextRestDays: Record<number, boolean> = {};
 
@@ -460,14 +557,21 @@ export default function WorkoutBuilder() {
 
           if (planData) {
             nextPlanId = planData.id;
+            const rawPlanName = String(planData.name || '').trim();
             nextPlanName =
-              !planData.name || planData.name === 'Workout Creator'
-                ? t('sidebar.creator', 'Tạo bài tập')
-                : planData.name;
+              !rawPlanName ||
+              rawPlanName === WORKOUT_CREATOR_LABEL_EN ||
+              rawPlanName === WORKOUT_CREATOR_LABEL_VI ||
+              rawPlanName.toLowerCase() === 'workout creator'
+                ? workoutCreatorLabel
+                : rawPlanName;
 
             const { data: items } = await supabase
               .from('weekly_plan_exercises')
-              .select('*')
+              .select(`
+                *,
+                exercises:exercise_id (name, gif_url, target_muscle, body_part)
+              `)
               .eq('weekly_plan_id', planData.id)
               .order('order_index');
 
@@ -479,17 +583,34 @@ export default function WorkoutBuilder() {
                 const day = item.day_of_week;
                 if (!grouped[day]) grouped[day] = [];
 
+                const joined = (item as any).exercises || {};
                 const detail = exercises.find(e => e.id === item.exercise_id);
+                const resolvedName = joined?.name || detail?.name || 'Exercise';
+                const resolvedGif = resolveGifUrl({ gif_url: joined?.gif_url || detail?.gif_url || '' });
+                const resolvedTarget = String(joined?.target_muscle || detail?.target_muscle || '');
+                const resolvedBodyPart = String(joined?.body_part || detail?.body_part || '');
 
                 grouped[day].push({
                   tempId: item.id,
                   exercise_id: item.exercise_id,
-                  name: detail?.name || 'Exercise',
-                  gif_url: detail?.gif_url || '',
+                  name: resolvedName,
+                  gif_url: resolvedGif,
+                  target_muscle: resolvedTarget,
                   sets: item.sets,
                   reps: parseInt(String(item.reps ?? 0), 10) || 0,
                   weight_kg: item.weight_kg,
                   rest_seconds: item.rest_seconds,
+                  kcal: Number(item.kcal ?? estimateExerciseKcalRealistic({
+                    exercise: {
+                      target_muscle: resolvedTarget,
+                      body_part: resolvedBodyPart
+                    },
+                    sets: item.sets,
+                    repsText: String(parseInt(String(item.reps ?? 0), 10) || 0),
+                    externalLoadKg: Number(item.weight_kg || 0),
+                    userWeightKg,
+                    restSeconds: Number(item.rest_seconds || 60)
+                  })),
                   is_rest_day: item.is_rest_day
                 });
 
@@ -513,7 +634,7 @@ export default function WorkoutBuilder() {
       }
     };
     fetchWeekPlan();
-  }, [user, selectedWeekKey, exercises, t]);
+  }, [user, selectedWeekKey, t, userWeightKg, isWeightReady]);
 
   // Derived Library
   const filteredExercises = useMemo(() => {
@@ -526,15 +647,25 @@ export default function WorkoutBuilder() {
 
   // Actions
   const addExercise = (ex: Exercise) => {
+    const kcal = estimateExerciseKcalRealistic({
+      exercise: { target_muscle: ex.target_muscle, body_part: ex.body_part },
+      sets: 3,
+      repsText: '12',
+      externalLoadKg: 20,
+      userWeightKg,
+      restSeconds: 60
+    });
     const newEx: PlanExercise = {
       tempId: Math.random().toString(36).substr(2, 9),
       exercise_id: ex.id,
       name: ex.name,
       gif_url: ex.gif_url,
+      target_muscle: ex.target_muscle,
       sets: 3,
       reps: 12,
       weight_kg: 20,
       rest_seconds: 60,
+      kcal,
       is_rest_day: false
     };
 
@@ -552,10 +683,25 @@ export default function WorkoutBuilder() {
     }));
   };
 
-  const updateExercise = (tempId: string, updates: Partial<PlanExercise>) => {
+  const updateExercise = (tempId: string, updates: Partial<PlanExercise>, shouldRecalc = true) => {
     setWeeklyPlan(prev => ({
       ...prev,
-      [selectedDayId]: prev[selectedDayId].map(i => i.tempId === tempId ? { ...i, ...updates } : i)
+      [selectedDayId]: prev[selectedDayId].map(i => {
+        if (i.tempId !== tempId) return i;
+        const merged = { ...i, ...updates };
+        if (!shouldRecalc) return merged;
+        return {
+          ...merged,
+          kcal: estimateExerciseKcalRealistic({
+            exercise: { target_muscle: merged.target_muscle },
+            sets: merged.sets,
+            repsText: String(merged.reps),
+            externalLoadKg: merged.weight_kg,
+            userWeightKg,
+            restSeconds: merged.rest_seconds
+          })
+        };
+      })
     }));
   };
 
@@ -568,15 +714,25 @@ export default function WorkoutBuilder() {
   };
 
   const addExerciseToDay = (ex: Exercise, dayId: number) => {
+    const kcal = estimateExerciseKcalRealistic({
+      exercise: { target_muscle: ex.target_muscle, body_part: ex.body_part },
+      sets: 3,
+      repsText: '12',
+      externalLoadKg: 20,
+      userWeightKg,
+      restSeconds: 60
+    });
     const newEx: PlanExercise = {
       tempId: Math.random().toString(36).slice(2, 11),
       exercise_id: ex.id,
       name: ex.name,
       gif_url: ex.gif_url,
+      target_muscle: ex.target_muscle,
       sets: 3,
       reps: 12,
       weight_kg: 20,
       rest_seconds: 60,
+      kcal,
       is_rest_day: false
     };
 
@@ -769,7 +925,7 @@ export default function WorkoutBuilder() {
           });
         } else {
           dayItems.forEach((item, idx) => {
-            allItems.push({
+            const row: any = {
               weekly_plan_id: currentPlanId,
               day_of_week: dayIdx,
               exercise_id: item.exercise_id,
@@ -778,20 +934,66 @@ export default function WorkoutBuilder() {
               weight_kg: item.weight_kg,
               rest_seconds: item.rest_seconds,
               order_index: idx
-            });
+            };
+            if (supportsKcalColumn) row.kcal = Number(item.kcal || 0);
+            allItems.push(row);
           });
         }
       });
 
       if (allItems.length > 0) {
-        const { error: insertError } = await supabase.from('weekly_plan_exercises').insert(allItems);
-        if (insertError) throw insertError;
+        const firstInsert = await supabase.from('weekly_plan_exercises').insert(allItems);
+        if (firstInsert.error && isKcalColumnError(firstInsert.error)) {
+          setSupportsKcalColumn(false);
+          const fallbackItems = allItems.map(({ kcal, ...rest }) => rest);
+          const retryInsert = await supabase.from('weekly_plan_exercises').insert(fallbackItems);
+          if (retryInsert.error) throw retryInsert.error;
+        } else if (firstInsert.error) {
+          throw firstInsert.error;
+        }
+      }
+
+      // 4.1) Sync Workout Creator -> Exercises (today only, VN timezone)
+      // Keep today's daily_exercise_sessions consistent with today's plan after Save.
+      if (isCurrentWeek) {
+        const vnTodayKey = getVietnamDateKey();
+        const todayDayIdx = getTodayDayIndex();
+        const todayItems = (weeklyPlan[todayDayIdx] || []).filter(item => !item.is_rest_day);
+
+        const { error: clearTodaySessionsError } = await supabase
+          .from('daily_exercise_sessions')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('log_date', vnTodayKey);
+        if (clearTodaySessionsError) throw clearTodaySessionsError;
+
+        if (!restDays[todayDayIdx] && todayItems.length > 0) {
+          const sessionRows = todayItems.map((item, idx) => ({
+            user_id: user.id,
+            log_date: vnTodayKey,
+            exercise_id: item.exercise_id,
+            sets: item.sets,
+            reps: String(item.reps),
+            weight_kg: item.weight_kg,
+            rest_seconds: item.rest_seconds,
+            order_index: idx,
+            is_completed: false
+          }));
+
+          const { error: insertTodaySessionsError } = await supabase
+            .from('daily_exercise_sessions')
+            .insert(sessionRows);
+          if (insertTodaySessionsError) throw insertTodaySessionsError;
+        }
       }
 
       // 5) Refresh day summary and items from DB right after save
       const { data: savedItems, error: refreshError } = await supabase
         .from('weekly_plan_exercises')
-        .select('*')
+        .select(`
+          *,
+          exercises:exercise_id (name, gif_url, target_muscle, body_part)
+        `)
         .eq('weekly_plan_id', currentPlanId)
         .order('order_index');
       if (refreshError) throw refreshError;
@@ -803,16 +1005,33 @@ export default function WorkoutBuilder() {
         const day = item.day_of_week;
         if (!grouped[day]) grouped[day] = [];
 
+        const joined = (item as any).exercises || {};
         const detail = exercises.find(e => e.id === item.exercise_id);
+        const resolvedName = joined?.name || detail?.name || 'Exercise';
+        const resolvedGif = resolveGifUrl({ gif_url: joined?.gif_url || detail?.gif_url || '' });
+        const resolvedTarget = String(joined?.target_muscle || detail?.target_muscle || '');
+        const resolvedBodyPart = String(joined?.body_part || detail?.body_part || '');
         grouped[day].push({
           tempId: item.id,
           exercise_id: item.exercise_id,
-          name: detail?.name || 'Exercise',
-          gif_url: detail?.gif_url || '',
+          name: resolvedName,
+          gif_url: resolvedGif,
+          target_muscle: resolvedTarget,
           sets: item.sets,
           reps: parseInt(String(item.reps ?? 0), 10) || 0,
           weight_kg: item.weight_kg,
           rest_seconds: item.rest_seconds,
+          kcal: Number(item.kcal ?? estimateExerciseKcalRealistic({
+            exercise: {
+              target_muscle: resolvedTarget,
+              body_part: resolvedBodyPart
+            },
+            sets: item.sets,
+            repsText: String(parseInt(String(item.reps ?? 0), 10) || 0),
+            externalLoadKg: Number(item.weight_kg || 0),
+            userWeightKg,
+            restSeconds: Number(item.rest_seconds || 60)
+          })),
           is_rest_day: item.is_rest_day
         });
 
@@ -845,25 +1064,10 @@ export default function WorkoutBuilder() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="h-[calc(100vh-72px-2rem)] md:h-[calc(100vh-80px-3rem)] overflow-hidden min-h-0">
+      <div className="h-auto lg:h-[calc(100vh-80px-3rem)] overflow-visible lg:overflow-hidden min-h-0">
         <div className="h-full flex flex-col min-h-0 gap-3 lg:gap-4">
-          <div className="lg:hidden bg-bg-secondary border border-border-primary rounded-2xl p-2 flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => setMobileView('plan')}
-              className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${mobileView === 'plan' ? 'bg-[#a3e635] text-black' : 'text-text-tertiary bg-bg-tertiary'}`}
-            >
-              {t('workout_builder.manage_routine', 'Lịch tập')}
-            </button>
-            <button
-              onClick={() => setMobileView('library')}
-              className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${mobileView === 'library' ? 'bg-[#a3e635] text-black' : 'text-text-tertiary bg-bg-tertiary'}`}
-            >
-              {t('sidebar.exercises', 'Thư viện')}
-            </button>
-          </div>
-
-          <div className="grid h-full min-h-0 gap-3 lg:gap-4 grid-cols-1 md:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className={`${mobileView === 'library' ? 'flex' : 'hidden'} md:flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-hidden min-h-0`}>
+          <div className="grid min-h-0 gap-3 lg:gap-4 grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] lg:h-full pb-6 lg:pb-0">
+          <aside className="flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-visible lg:overflow-hidden min-h-0">
             <div className="p-4 border-b border-border-primary shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-[#a3e635]/10 text-[#a3e635] flex items-center justify-center shrink-0">
@@ -874,7 +1078,7 @@ export default function WorkoutBuilder() {
                   value={planName}
                   onChange={(e) => setPlanName(e.target.value)}
                   className="text-xl md:text-2xl font-black text-text-primary bg-transparent border-none outline-none focus:ring-0 w-full p-0"
-                  placeholder={t('sidebar.creator')}
+                  placeholder={workoutCreatorLabel}
                 />
               </div>
               <div className="flex items-center gap-2 text-text-tertiary mt-2">
@@ -920,17 +1124,17 @@ export default function WorkoutBuilder() {
             </div>
           </aside>
 
-          <section className={`${mobileView === 'plan' ? 'flex' : 'hidden'} md:flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-hidden min-h-0`}>
+          <section className="flex bg-bg-secondary border border-border-primary rounded-3xl flex-col overflow-visible lg:overflow-hidden min-h-0">
             <div className="p-3 md:p-4 border-b border-border-primary shrink-0">
-              <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <h3 className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
                   {currentLang === 'vi' ? 'Lịch theo tuần' : 'Weekly schedule'}
                 </h3>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                   <button
-                    onClick={() => setSelectedWeekStart(getWeekStart(new Date()))}
+                    onClick={() => setSelectedWeekStart(getWeekStart(getVietnamTodayDate()))}
                     disabled={isCurrentWeek}
-                    className={`h-8 px-2.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all ${isCurrentWeek
+                    className={`h-8 px-2 sm:px-2.5 rounded-lg border text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all ${isCurrentWeek
                       ? 'border-border-primary bg-bg-tertiary text-text-tertiary cursor-not-allowed opacity-60'
                       : 'border-[#a3e635]/30 bg-[#a3e635]/10 text-[#a3e635] hover:bg-[#a3e635]/20'
                       }`}
@@ -944,8 +1148,8 @@ export default function WorkoutBuilder() {
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <div className="h-8 rounded-lg border border-border-primary bg-bg-tertiary px-3 flex items-center justify-center">
-                    <span className="text-[11px] font-bold text-text-secondary uppercase tracking-wide whitespace-nowrap">
+                  <div className="h-8 rounded-lg border border-border-primary bg-bg-tertiary px-2.5 sm:px-3 flex items-center justify-center">
+                    <span className="text-[10px] sm:text-[11px] font-bold text-text-secondary uppercase tracking-wide whitespace-nowrap">
                       {selectedWeekLabel}
                     </span>
                   </div>
@@ -969,7 +1173,7 @@ export default function WorkoutBuilder() {
                   <button
                     key={day.id}
                     onClick={() => setSelectedDayId(day.id)}
-                    className={`min-w-[92px] md:min-w-0 w-full px-2.5 md:px-3 py-2 rounded-2xl border transition-all text-left ${selectedDayId === day.id
+                    className={`min-w-[88px] md:min-w-0 w-full px-2.5 md:px-3 py-2 rounded-2xl border transition-all text-left ${selectedDayId === day.id
                       ? 'bg-[#a3e635] text-black border-[#a3e635]'
                       : 'bg-bg-secondary text-text-secondary border-border-primary hover:border-border-secondary'
                       }`}
@@ -990,7 +1194,7 @@ export default function WorkoutBuilder() {
               </div>
             </div>
 
-            <div className="p-3 md:p-4 border-b border-border-primary grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 shrink-0">
+            <div className="p-3 md:p-4 border-b border-border-primary grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 shrink-0">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-[#a3e635]/10 flex items-center justify-center text-[#a3e635]">
                   <Calendar className="w-5 h-5" />
@@ -1000,24 +1204,24 @@ export default function WorkoutBuilder() {
                 </h2>
               </div>
 
-              <div className="flex items-center gap-2 justify-end flex-nowrap w-[420px] max-w-full">
+              <div className="flex items-center gap-2 justify-end flex-wrap sm:flex-nowrap w-full sm:w-auto">
                 <button
                   onClick={toggleRestDay}
-                  className={`h-9 w-[110px] flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${restDays[selectedDayId]
+                  className={`h-9 flex-1 sm:flex-none sm:w-[110px] min-w-[120px] sm:min-w-0 flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${restDays[selectedDayId]
                     ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
                     : 'bg-bg-tertiary text-text-tertiary border border-border-primary hover:text-text-primary'
                     }`}
                 >
                   <Moon className="w-4 h-4" />
-                  <span className="hidden sm:inline truncate">{t('sidebar.rest_day')}</span>
+                  <span className="truncate">{t('sidebar.rest_day')}</span>
                 </button>
                 <button
                   onClick={savePlan}
                   disabled={isSaving}
-                  className="h-9 w-[130px] flex items-center justify-center gap-2 px-4 md:px-5 py-2 bg-[#a3e635] text-black rounded-xl text-xs md:text-sm font-black hover:bg-[#bef264] transition-all disabled:opacity-50"
+                  className="h-9 flex-1 sm:flex-none sm:w-[130px] min-w-[120px] sm:min-w-0 flex items-center justify-center gap-2 px-4 md:px-5 py-2 bg-[#a3e635] text-black rounded-xl text-xs md:text-sm font-black hover:bg-[#bef264] transition-all disabled:opacity-50"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span className="hidden sm:inline truncate">Save</span>
+                  <span className="truncate">Save</span>
                 </button>
               </div>
             </div>
@@ -1047,7 +1251,7 @@ export default function WorkoutBuilder() {
                         key={item.tempId}
                         item={{ ...item, tempId: `plan-${item.tempId}` }}
                         onDelete={(id) => deleteExercise(id.replace('plan-', ''))}
-                        onUpdate={(id, update) => updateExercise(id.replace('plan-', ''), update)}
+                        onUpdate={(id, update, shouldRecalc) => updateExercise(id.replace('plan-', ''), update, shouldRecalc)}
                       />
                     ))}
                   </SortableContext>

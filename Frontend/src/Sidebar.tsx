@@ -6,6 +6,49 @@ import AuthModal from './components/AuthModal';
 import { supabase } from './lib/supabase';
 import { useTranslation } from 'react-i18next';
 
+const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+const getDatePartsInTimeZone = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value || '1970';
+  const month = parts.find((p) => p.type === 'month')?.value || '01';
+  const day = parts.find((p) => p.type === 'day')?.value || '01';
+  return { year, month, day };
+};
+
+const getVietnamDateKey = (date = new Date()): string => {
+  const { year, month, day } = getDatePartsInTimeZone(date, VIETNAM_TIMEZONE);
+  return `${year}-${month}-${day}`;
+};
+
+const addDaysToDateKey = (dateKey: string, days: number): string => {
+  const d = new Date(`${dateKey}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return getVietnamDateKey(d);
+};
+
+const calculateWorkoutStreak = (completedDateKeys: string[], todayKey: string): number => {
+  const completedSet = new Set(completedDateKeys);
+  let streak = 0;
+  let cursor = todayKey;
+
+  if (!completedSet.has(cursor)) {
+    cursor = addDaysToDateKey(cursor, -1);
+  }
+
+  while (completedSet.has(cursor)) {
+    streak += 1;
+    cursor = addDaysToDateKey(cursor, -1);
+  }
+
+  return streak;
+};
+
 export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: { 
   onClose?: () => void, 
   onProfileClick?: () => void,
@@ -17,10 +60,11 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
   const { t } = useTranslation();
   const [waterIntake, setWaterIntake] = useState(0);
   const [waterGoal, setWaterGoal] = useState(2.5);
+  const [streakDays, setStreakDays] = useState(0);
 
   const fetchWater = async () => {
     if (!user) return;
-    const today = new Date().toISOString().split('T')[0];
+    const today = getVietnamDateKey();
     const { data: log } = await supabase
       .from('daily_progress_logs')
       .select('water_intake_ml')
@@ -34,12 +78,32 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
       .eq('user_id', user.id)
       .maybeSingle();
 
+    const { data: completedDays } = await supabase
+      .from('daily_exercise_sessions')
+      .select('log_date')
+      .eq('user_id', user.id)
+      .eq('is_completed', true)
+      .order('log_date', { ascending: false })
+      .limit(180);
+
     if (log) setWaterIntake((log.water_intake_ml || 0) / 1000);
     if (lifestyle) setWaterGoal(lifestyle.daily_water_goal || 2.5);
+    if (completedDays) {
+      const completedDateKeys = Array.from(
+        new Set(completedDays.map((row: any) => String(row.log_date || '')).filter(Boolean))
+      );
+      setStreakDays(calculateWorkoutStreak(completedDateKeys, today));
+    } else {
+      setStreakDays(0);
+    }
   };
 
   useEffect(() => {
-    if (isLoggedIn) fetchWater();
+    if (isLoggedIn) {
+      fetchWater();
+    } else {
+      setStreakDays(0);
+    }
   }, [isLoggedIn, user, refreshTick]);
 
   const menuItems = [
@@ -156,7 +220,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                   onClick={async () => {
                     if (!isLoggedIn) return;
                     const newIntake = i * cupSize;
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = getVietnamDateKey();
                     const { error } = await supabase
                       .from('daily_progress_logs')
                       .upsert({ 
@@ -257,7 +321,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                 <div className="overflow-hidden">
                   <p className="text-sm font-semibold text-text-primary truncate">{userName}</p>
                   <p className="text-xs text-text-tertiary flex items-center gap-1">
-                    <Flame className="w-3 h-3 text-[#ff5e00]" /> 1 {t('sidebar.streak_days', 'ngày liên tiếp')}
+                    <Flame className="w-3 h-3 text-[#ff5e00]" /> {streakDays} {t('sidebar.streak_days', 'ngày liên tiếp')}
                   </p>
                 </div>
               </div>

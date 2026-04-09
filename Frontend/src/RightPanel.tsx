@@ -6,6 +6,26 @@ import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { useTranslation } from 'react-i18next';
 
+const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+const getDatePartsInTimeZone = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value || '1970';
+  const month = parts.find((p) => p.type === 'month')?.value || '01';
+  const day = parts.find((p) => p.type === 'day')?.value || '01';
+  return { year, month, day };
+};
+
+const getVietnamDateKey = (date = new Date()): string => {
+  const { year, month, day } = getDatePartsInTimeZone(date, VIETNAM_TIMEZONE);
+  return `${year}-${month}-${day}`;
+};
+
 export default function RightPanel() {
   const { user, isLoggedIn, refreshTick } = useAuth();
   const { t } = useTranslation();
@@ -59,10 +79,10 @@ export default function RightPanel() {
         const { data: lifestyle } = await supabase.from('lifestyle_settings').select('daily_water_goal, activity_level, fitness_goal').eq('user_id', user.id).maybeSingle();
         const { data: health } = await supabase.from('health_conditions').select('sleep_hours').eq('user_id', user.id).maybeSingle();
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = getVietnamDateKey();
         const { data: log } = await supabase
           .from('daily_progress_logs')
-          .select('calories_consumed, water_intake_ml, sleep_hours')
+          .select('calories_consumed, calories_burned, water_intake_ml, sleep_hours')
           .eq('user_id', user.id)
           .eq('log_date', today)
           .maybeSingle();
@@ -134,37 +154,16 @@ export default function RightPanel() {
           });
           setTodayWorkouts(mapped);
 
-          // Fallback kcal for panel if daily log not filled yet
-          if (!log?.calories_consumed) {
-            const userWeight = Number(body?.weight || 70);
-            const estimatedKcal = todaySessions
-              .filter((s: any) => !!s.is_completed)
-              .reduce((sum: number, s: any) => sum + estimateExerciseKcal(s, userWeight), 0);
-            setConsumedKcal(estimatedKcal);
-          }
+          // Real burned kcal from completed exercises today (sync with Exercises)
+          const userWeight = Number(body?.weight || 70);
+          const estimatedKcal = todaySessions
+            .filter((s: any) => !!s.is_completed)
+            .reduce((sum: number, s: any) => sum + estimateExerciseKcal(s, userWeight), 0);
+          setConsumedKcal(estimatedKcal);
         } else {
-          const { data: workoutRec } = await supabase
-            .from('ai_recommendations')
-            .select('recommendation_content')
-            .eq('user_id', user.id)
-            .eq('plan_type', 'workout')
-            .eq('status', 'active')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (workoutRec?.recommendation_content) {
-            try {
-              const content = typeof workoutRec.recommendation_content === 'string'
-                ? JSON.parse(workoutRec.recommendation_content)
-                : workoutRec.recommendation_content;
-              setTodayWorkouts(Array.isArray(content) ? content : []);
-            } catch {
-              setTodayWorkouts([]);
-            }
-          } else {
-            setTodayWorkouts([]);
-          }
+          // Keep Today's Plan consistent with Exercises page only
+          setTodayWorkouts([]);
+          setConsumedKcal(0);
         }
 
         let age = 0;
