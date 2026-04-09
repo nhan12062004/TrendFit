@@ -29,6 +29,7 @@ export default function ProfileModal({ onComplete, isOpen, onClose }: ProfileMod
   const { user, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     // Section 1: Thông tin cá nhân
     full_name: user?.user_metadata?.full_name || '',
@@ -88,6 +89,7 @@ export default function ProfileModal({ onComplete, isOpen, onClose }: ProfileMod
     : '0';
 
   React.useEffect(() => {
+    if (isOpen) setIsEditing(false);
     async function loadCurrentData() {
       if (!user || !isOpen) return;
       try {
@@ -150,6 +152,7 @@ export default function ProfileModal({ onComplete, isOpen, onClose }: ProfileMod
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    setIsSubmitted(true);
     setLoading(true);
 
     try {
@@ -244,6 +247,7 @@ export default function ProfileModal({ onComplete, isOpen, onClose }: ProfileMod
       }
 
       await refreshProfile();
+      setIsEditing(false);
       if (onComplete) onComplete();
       if (onClose) onClose();
     } catch (err: any) {
@@ -304,6 +308,11 @@ export default function ProfileModal({ onComplete, isOpen, onClose }: ProfileMod
 
         {/* View / Edit Content */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10 custom-scrollbar">
+          {isEditing && (
+            <div className="bg-red-500/10 border border-red-500/20 p-2 rounded-lg mb-4 text-center">
+               <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest text-white">Lưu ý: Các trường có dấu <span className="text-sm">*</span> là bắt buộc phải điền</p>
+            </div>
+          )}
           <fieldset disabled={!isEditing} className="space-y-10 disabled:opacity-90">
             {/* Section 1: Thông tin cá nhân */}
             <section className="space-y-4">
@@ -313,26 +322,26 @@ export default function ProfileModal({ onComplete, isOpen, onClose }: ProfileMod
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Họ và tên</label>
-                  <input required name="full_name" value={formData.full_name} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent" placeholder="Nguyễn Văn A" />
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Họ và tên <span className="text-red-500">*</span></label>
+                  <input required name="full_name" value={formData.full_name} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.full_name ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent`} placeholder="Nguyễn Văn A" />
                 </div>
                 <div className="space-y-1.5 opacity-70">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Email (Tự điền)</label>
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Email (Tự điền) <span className="text-red-500">*</span></label>
                   <input readOnly type="email" name="email" value={formData.email} className="w-full bg-bg-tertiary/50 border border-border-primary rounded-xl py-2 px-3 text-sm outline-none cursor-not-allowed text-white" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Số điện thoại</label>
-                  <input required type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent" placeholder="090 123 4567" />
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Số điện thoại <span className="text-red-500">*</span></label>
+                  <input required type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.phone ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent`} placeholder="090 123 4567" />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Ngày sinh</label>
-                  <input required type="date" name="birthday" value={formData.birthday} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent" />
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Ngày sinh <span className="text-red-500">*</span></label>
+                  <input required type="date" name="birthday" value={formData.birthday} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.birthday ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent`} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Giới tính</label>
-                  <select name="gender" value={formData.gender} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent disabled:appearance-none">
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Giới tính <span className="text-red-500">*</span></label>
+                  <select name="gender" value={formData.gender} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.gender ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent disabled:appearance-none`}>
                     <option>Nam</option>
                     <option>Nữ</option>
                     <option>Khác</option>
@@ -353,16 +362,16 @@ export default function ProfileModal({ onComplete, isOpen, onClose }: ProfileMod
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Chiều cao (cm)</label>
-                <input required type="number" name="height" value={formData.height} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white" placeholder="175" />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Chiều cao (cm) <span className="text-red-500">*</span></label>
+                <input required type="number" name="height" value={formData.height} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.height ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white`} placeholder="175" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Cân nặng (kg)</label>
-                <input required type="number" name="weight" value={formData.weight} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white" placeholder="70" />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Cân nặng (kg) <span className="text-red-500">*</span></label>
+                <input required type="number" name="weight" value={formData.weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.weight ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white`} placeholder="70" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Cân nặng đích (kg)</label>
-                <input required type="number" name="target_weight" value={formData.target_weight} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white" placeholder="65" />
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Cân nặng đích (kg) <span className="text-red-500">*</span></label>
+                <input required type="number" name="target_weight" value={formData.target_weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.target_weight ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white`} placeholder="65" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">% Mỡ cơ thể (nếu biết)</label>

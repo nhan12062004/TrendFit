@@ -7,10 +7,12 @@ import { useTranslation } from 'react-i18next';
 
 import { useOutletContext } from 'react-router-dom';
 
+
 export default function MainContent() {
   const { onProfileClick } = useOutletContext<{ onProfileClick: () => void }>();
   const { user, isLoggedIn, refreshTick, profile } = useAuth();
   const { t } = useTranslation();
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     workout_duration: 0,
     calories_burned: 0,
@@ -27,6 +29,7 @@ export default function MainContent() {
   useEffect(() => {
     async function fetchData() {
       if (!user) return;
+      setLoading(true);
       try {
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
@@ -70,10 +73,21 @@ export default function MainContent() {
             streak: profile?.streak_days || 1
           });
         }
-      } catch (e) { console.error(e); }
+      } catch (e) { 
+        console.error(e); 
+      } finally {
+        setLoading(false);
+      }
     }
-    if (isLoggedIn) fetchData();
+    if (isLoggedIn) {
+      fetchData();
+    } else {
+      setLoading(false);
+    }
   }, [user, isLoggedIn, refreshTick, profile]);
+
+  // Removed internal LoadingScreen as it's now handled by Overview.tsx
+  // if (loading) return <LoadingScreen />;
 
   const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || t('common.member', 'Thành viên');
   const nameParts = rawName.trim().split(/\s+/);

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AuthModal from '../components/AuthModal';
 import VerificationSuccessModal from '../components/VerificationSuccessModal';
+import LoadingScreen from '../components/LoadingScreen';
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -39,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select('*')
       .eq('id', userId)
       .single();
-    
+
     setProfile(data || null);
     setHasProfile(!!data && !error);
     setUserRole(data?.role || 'user');
@@ -51,14 +52,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleInitialHash = () => {
       const hash = window.location.hash;
       const searchParams = new URLSearchParams(window.location.search);
-      
+
       // Supabase thường gửi kèm access_token trong hash sau khi verify email
       if (hash.includes('access_token=') && (hash.includes('type=signup') || hash.includes('type=recovery'))) {
         setIsVerifying(true);
         // Xóa hash để URL sạch hơn
         window.history.replaceState(null, '', window.location.pathname);
       }
-      
+
       // Hoặc kiểm tra qua query params nếu có cấu hình khác
       if (searchParams.get('verified') === 'true') {
         setIsVerifying(true);
@@ -110,9 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isLoggedIn: !!user, 
-      user, 
+    <AuthContext.Provider value={{
+      isLoggedIn: !!user,
+      user,
       profile,
       hasProfile,
       isCheckingProfile,
@@ -124,11 +125,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       refreshTick
     }}>
-      {!loading && children}
+      {loading ? <LoadingScreen fullScreen /> : children}
       <AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
-      <VerificationSuccessModal 
-        isOpen={isVerifying} 
-        onClose={() => setIsVerifying(false)} 
+      <VerificationSuccessModal
+        isOpen={isVerifying}
+        onClose={() => setIsVerifying(false)}
         onLoginClick={() => {
           setIsVerifying(false);
           // User thường đã được tự động đăng nhập bởi Supabase sau khi click email

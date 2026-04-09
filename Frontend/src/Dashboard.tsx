@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
@@ -6,6 +6,7 @@ import SurveyForm from './components/SurveyForm';
 import ProfileModal from './components/ProfileModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import { useAuth } from './contexts/AuthContext';
+import LoadingScreen from './components/LoadingScreen';
 
 export default function Dashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -13,13 +14,10 @@ export default function Dashboard() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const { isLoggedIn, hasProfile, isCheckingProfile, refreshProfile } = useAuth();
 
-  // 1. Loading state khi đang kiểm tra Profile
-  if (isCheckingProfile) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-bg-primary">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#a3e635]"></div>
-      </div>
-    );
+  // 1. Loading state - Chỉ hiện LoadingScreen toàn màn hình nếu đây là lần đầu kiểm tra và chưa có profile
+  // Nếu đã có profile (đang refresh) thì giữ nguyên UI để tránh flickering
+  if (isCheckingProfile && !hasProfile) {
+    return <LoadingScreen fullScreen />;
   }
 
   // 2. Nếu đã đăng nhập nhưng chưa có Profile -> Bắt buộc làm Survey
@@ -66,7 +64,9 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col min-w-0 w-full h-screen overflow-y-auto custom-scrollbar">
         <TopBar onMenuClick={() => setIsMobileMenuOpen(true)} onProfileClick={() => setIsProfileOpen(true)} />
         <main className="flex-1 p-4 md:p-6 flex flex-col xl:flex-row gap-6 min-w-0">
-          <Outlet context={{ onProfileClick: () => setIsProfileOpen(true) }} />
+          <Suspense fallback={<LoadingScreen />}>
+            <Outlet context={{ onProfileClick: () => setIsProfileOpen(true) }} />
+          </Suspense>
         </main>
       </div>
     </div>
