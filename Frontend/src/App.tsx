@@ -8,6 +8,7 @@ import WorkoutBuilder from './WorkoutBuilder';
 import DietPlan from './DietPlan';
 import Exercises from './Exercises';
 import WorkoutTimer from './WorkoutTimer';
+import Goals from './Goals';
 
 const PlaceholderPage = lazy(() => import('./PlaceholderPage'));
 
@@ -25,7 +26,7 @@ export default function App() {
                 <Route path="exercises" element={<Exercises />} />
                 <Route path="diet-plan" element={<DietPlan />} />
                 <Route path="workout-timer" element={<WorkoutTimer />} />
-                <Route path="goals" element={<PlaceholderPage title="Goals" />} />
+                <Route path="goals" element={<Goals />} />
                 <Route path="achievements" element={<PlaceholderPage title="Achievements" />} />
                 <Route path="workout-builder" element={<WorkoutBuilder />} />
                 <Route path="progress" element={<PlaceholderPage title="Progress" />} />

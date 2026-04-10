@@ -15,7 +15,12 @@
     "today": "Hôm nay",
     "add_new": "Thêm mới",
     "error": "Lỗi: ",
-    "member": "Thành viên"
+    "member": "Thành viên",
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu...",
+    "cancel": "Hủy",
+    "create": "Tạo mới",
+    "add_goal": "Thêm mục tiêu"
   },
   "sidebar": {
     "overview": "Tổng quan",
@@ -318,5 +323,32 @@
     "reps": "Lần",
     "weight": "KG",
     "rest": "Nghỉ (s)"
+  },
+  "goals": {
+    "subtitle": "Thiết lập và theo dõi lộ trình của bạn",
+    "saved_successfully": "Lưu mục tiêu thành công!",
+    "main_objective": "Mục Tiêu Chính",
+    "weight_target": "Mục Tiêu Cân Nặng",
+    "current": "Hiện tại",
+    "target": "Mục tiêu",
+    "difference": "Khác biệt",
+    "activity_targets": "Mục Tiêu Chỉ Số Vận Động",
+    "workout_duration": "Thời gian tập (Phút)",
+    "minutes_per_day": "phút/ngày",
+    "calories_burn": "Năng lượng đốt (Kcal)",
+    "kcal_per_day": "kcal/ngày",
+    "today_progress": "Tiến độ mục tiêu hôm nay",
+    "completed_text": "Hoàn thành",
+    "daily_target_unit": "mục tiêu ngày.",
+    "add_custom_goal": "Thêm mục tiêu phụ",
+    "goal_name_label": "Tên mục tiêu (VD: Đọc sách)",
+    "enter_name": "Nhập tên...",
+    "target_value": "Chỉ tiêu",
+    "example_30": "VD: 30",
+    "unit": "Đơn vị",
+    "example_page": "VD: trang",
+    "weekly_workouts": "Tần suất tập",
+    "sessions_per_week": "buổi/tuần",
+    "session": "buổi"
   }
 }

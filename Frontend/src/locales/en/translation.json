@@ -15,7 +15,12 @@
     "today": "Today",
     "add_new": "Add new",
     "error": "Error: ",
-    "member": "Member"
+    "member": "Member",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "create": "Create",
+    "add_goal": "Add Goal"
   },
   "sidebar": {
     "overview": "Overview",
@@ -318,5 +323,32 @@
     "reps": "Reps",
     "weight": "KG",
     "rest": "Rest (s)"
+  },
+  "goals": {
+    "subtitle": "Set and track your roadmap",
+    "saved_successfully": "Goals saved successfully!",
+    "main_objective": "Main Objective",
+    "weight_target": "Weight Target",
+    "current": "Current",
+    "target": "Target",
+    "difference": "Difference",
+    "activity_targets": "Activity Goals",
+    "workout_duration": "Workout Duration (Mins)",
+    "minutes_per_day": "mins/day",
+    "calories_burn": "Calories Burn (Kcal)",
+    "kcal_per_day": "kcal/day",
+    "today_progress": "Today's Progress",
+    "completed_text": "Completed",
+    "daily_target_unit": "daily goals.",
+    "add_custom_goal": "Add Custom Goal",
+    "goal_name_label": "Goal Name (e.g., Reading)",
+    "enter_name": "Enter name...",
+    "target_value": "Target",
+    "example_30": "e.g., 30",
+    "unit": "Unit",
+    "example_page": "e.g., pages",
+    "weekly_workouts": "Weekly Workouts",
+    "sessions_per_week": "sessions/week",
+    "session": "session"
   }
 }
