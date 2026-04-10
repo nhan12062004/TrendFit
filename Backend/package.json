@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "npx tsx watch src/index.ts",
+    "start": "npx tsx src/index.ts",
     "import-exercises": "npx tsx src/scripts/importExercises.ts"
   },
   "keywords": [],

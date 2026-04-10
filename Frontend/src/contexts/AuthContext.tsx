@@ -110,7 +110,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    let realtimeChannel: any = null;
+    
+    const setupRealtime = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      
+      realtimeChannel = supabase.channel('realtime_sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_progress_logs', filter: `user_id=eq.${session.user.id}` }, () => {
+          setRefreshTick(prev => prev + 1);
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_exercise_sessions', filter: `user_id=eq.${session.user.id}` }, () => {
+          setRefreshTick(prev => prev + 1);
+        })
+        .subscribe();
+    }
+    
+    setupRealtime();
+
+    return () => {
+      subscription.unsubscribe();
+      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+    };
   }, []);
 
   const signOut = async () => {
