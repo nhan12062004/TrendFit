@@ -45,6 +45,7 @@ export default function RightPanel() {
   const [todayWorkouts, setTodayWorkouts] = useState<any[]>([]);
   const [sleepHours, setSleepHours] = useState({ actual: 0, target: 0 });
   const [aiTargetKcal, setAiTargetKcal] = useState<number | null>(null);
+  const [dietMacros, setDietMacros] = useState({ p: 0, c: 0, f: 0 });
 
   const parseReps = (reps: string | null | undefined): number => {
     if (!reps) return 10;
@@ -115,12 +116,65 @@ export default function RightPanel() {
           });
         }
 
-        // Read target calories from lifestyle_settings (replaces nutrition_plans)
-        if (lifestyle?.target_calories) {
-          setAiTargetKcal(Number(lifestyle.target_calories));
+        // --- Fetch Diet Plan Total for Today ---
+        // Calculate current week's start date
+        const d = new Date(today);
+        const day = d.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        const weekStart = new Date(d);
+        weekStart.setDate(weekStart.getDate() + diff);
+        const weekStartKey = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}-${String(weekStart.getDate()).padStart(2, '0')}`;
+        
+        const todayDayOfWeek = day === 0 ? 6 : day - 1; // 0 for Mon, 6 for Sun
+
+        let totalDietKcal = 0;
+        let totalDietProtein = 0;
+        let totalDietCarbs = 0;
+        let totalDietFat = 0;
+
+        const { data: plans } = await supabase
+          .from('weekly_food_plans')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('week_start_date', weekStartKey)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (plans && plans.length > 0) {
+          const { data: foodItems } = await supabase
+            .from('weekly_food_items')
+            .select('calories, protein, carbs, fat, quantity, foods(calories, protein, carbs, fat)')
+            .eq('food_plan_id', plans[0].id)
+            .eq('day_of_week', todayDayOfWeek);
+
+          if (foodItems && foodItems.length > 0) {
+            foodItems.forEach((item: any) => {
+              const qty = Number(item.quantity || 1);
+              const foodCal = Number(item.calories || item.foods?.calories || 0);
+              const foodP = Number(item.protein || item.foods?.protein || 0);
+              const foodC = Number(item.carbs || item.foods?.carbs || 0);
+              const foodF = Number(item.fat || item.foods?.fat || 0);
+              
+              totalDietKcal += foodCal * qty;
+              totalDietProtein += foodP * qty;
+              totalDietCarbs += foodC * qty;
+              totalDietFat += foodF * qty;
+            });
+          }
         }
 
-        // Today's plan should prioritize real daily sessions
+        // --- Set Goal to Diet Plan total, disable aiTargetKcal usage for UI ---
+        setAiTargetKcal(Math.round(totalDietKcal));
+        setDietMacros({ 
+          p: Math.round(totalDietProtein), 
+          c: Math.round(totalDietCarbs), 
+          f: Math.round(totalDietFat) 
+        });
+        // We will pass macros state by attaching it to the component. But wait, we can just use hooks.
+        // Let's set the metrics directly handling state.
+        
+        // Today's Workouts plan
+        let estimatedKcalBurned = 0;
         const { data: todaySessions } = await supabase
           .from('daily_exercise_sessions')
           .select(`
@@ -148,18 +202,17 @@ export default function RightPanel() {
             };
           });
           setTodayWorkouts(mapped);
-
-          // Real burned kcal from completed exercises today (sync with Exercises)
+          
           const userWeight = Number(body?.weight || 70);
-          const estimatedKcal = todaySessions
+          estimatedKcalBurned = todaySessions
             .filter((s: any) => !!s.is_completed)
             .reduce((sum: number, s: any) => sum + estimateExerciseKcal(s, userWeight), 0);
-          setConsumedKcal(estimatedKcal);
         } else {
-          // Keep Today's Plan consistent with Exercises page only
           setTodayWorkouts([]);
-          setConsumedKcal(0);
         }
+
+        // Set Consumed to the BURNED calories from workouts
+        setConsumedKcal(estimatedKcalBurned);
 
         let age = 0;
         if (profile?.birthday) {
@@ -195,6 +248,7 @@ export default function RightPanel() {
       setTodayWorkouts([]);
       setSleepHours({ actual: 0, target: 0 });
       setAiTargetKcal(null);
+      setDietMacros({ p: 0, c: 0, f: 0 });
     }
   }, [user, isLoggedIn, refreshTick]);
 
@@ -233,14 +287,15 @@ export default function RightPanel() {
 
       {/* Calories Progress */}
       <div className="bg-bg-secondary rounded-2xl p-4 md:p-6 border border-border-primary">
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-center">
-            <span className="block text-lg font-bold text-text-primary">
-              <AnimatedNumber value={consumedKcal} /> kcal
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-6 my-2">
+          {/* --- TOP ROW --- */}
+          <div className="text-center flex flex-col items-center justify-center min-w-0 justify-self-center">
+            <span className="block text-base sm:text-lg font-bold text-text-primary whitespace-nowrap">
+              <AnimatedNumber value={consumedKcal} /> <span className="text-sm">kcal</span>
             </span>
-            <span className="text-[10px] text-text-tertiary">{t('right_panel.calories_consumed')}</span>
+            <span className="text-[10px] text-text-tertiary whitespace-nowrap truncate w-full">{t('right_panel.calories_consumed')}</span>
           </div>
-          <div className="relative w-24 h-24">
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 mx-auto">
             <svg viewBox="0 0 36 36" className="w-full h-full">
               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" strokeWidth="3" />
               <path
@@ -254,23 +309,32 @@ export default function RightPanel() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-bold text-text-primary leading-none">
+              <span className="text-lg sm:text-xl font-bold text-text-primary leading-none">
                 <AnimatedNumber value={targetKcal} />
               </span>
               <span className="text-[8px] text-text-tertiary uppercase font-bold tracking-widest mt-1">{t('right_panel.goal')}</span>
             </div>
           </div>
-          <div className="text-center">
-            <span className="block text-lg font-bold text-text-primary">
-              <AnimatedNumber value={remainingKcal > 0 ? remainingKcal : 0} /> kcal
+          <div className="text-center flex flex-col items-center justify-center min-w-0 justify-self-center">
+            <span className="block text-base sm:text-lg font-bold text-text-primary whitespace-nowrap">
+              <AnimatedNumber value={remainingKcal > 0 ? remainingKcal : 0} /> <span className="text-sm">kcal</span>
             </span>
-            <span className="text-[10px] text-text-tertiary font-medium">{t('right_panel.remaining')}</span>
+            <span className="text-[10px] text-text-tertiary font-medium whitespace-nowrap truncate w-full">{t('right_panel.remaining')}</span>
           </div>
-        </div>
-        <div className="flex justify-between mt-6 px-2">
-          <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[#a3e635]"></div><span className="text-[10px] text-text-secondary font-bold">P-{Math.round(targetKcal * 0.3 / 4)}g</span></div>
-          <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-[10px] text-text-secondary font-bold">C-{Math.round(targetKcal * 0.4 / 4)}g</span></div>
-          <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[#ff5e00]"></div><span className="text-[10px] text-text-secondary font-bold">F-{Math.round(targetKcal * 0.3 / 9)}g</span></div>
+
+          {/* --- BOTTOM ROW --- */}
+          <div className="flex items-center justify-center gap-1 justify-self-center">
+            <div className="w-2 h-2 rounded-full bg-[#a3e635]"></div>
+            <span className="text-[10px] text-text-secondary font-bold">P-{dietMacros.p}g</span>
+          </div>
+          <div className="flex items-center justify-center gap-1 justify-self-center">
+            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+            <span className="text-[10px] text-text-secondary font-bold">C-{dietMacros.c}g</span>
+          </div>
+          <div className="flex items-center justify-center gap-1 justify-self-center">
+            <div className="w-2 h-2 rounded-full bg-[#ff5e00]"></div>
+            <span className="text-[10px] text-text-secondary font-bold">F-{dietMacros.f}g</span>
+          </div>
         </div>
       </div>
 

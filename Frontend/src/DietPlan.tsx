@@ -82,7 +82,7 @@ const NutrientRing = ({ value, target, label, color, unit }: { value: number; ta
   const pct = target && target > 0 ? Math.min(100, (value / target) * 100) : 0;
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className="relative w-14 h-14 sm:w-[68px] sm:h-[68px]">
+      <div className="relative w-14 h-14 sm:w-[72px] sm:h-[72px]">
         <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
           <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--bg-tertiary)" strokeWidth="2.5" />
           <circle cx="18" cy="18" r="15.5" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"
@@ -90,11 +90,18 @@ const NutrientRing = ({ value, target, label, color, unit }: { value: number; ta
             style={{ filter: `drop-shadow(0 0 4px ${color}40)` }} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xs sm:text-sm font-black text-text-primary leading-none tabular-nums">{value}</span>
-          <span className="text-[7px] text-text-tertiary font-bold uppercase">{unit}</span>
+          <div className="flex items-baseline gap-0.5">
+            <span className="text-sm font-black text-text-primary leading-none tabular-nums">{value}</span>
+          </div>
+          {target && target > 0 && (
+            <span className="text-[7.5px] text-text-tertiary font-bold overflow-hidden text-ellipsis whitespace-nowrap max-w-[90%] text-center mt-0.5" title={`Target: ${target}`}>
+              / {target}
+            </span>
+          )}
+          <span className="text-[7px] text-text-tertiary font-bold uppercase mt-0.5">{unit}</span>
         </div>
       </div>
-      <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-text-tertiary">{label}</span>
+      <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-text-tertiary mt-1">{label}</span>
     </div>
   );
 };
