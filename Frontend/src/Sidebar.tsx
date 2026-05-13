@@ -1,11 +1,9 @@
-import { Home, Activity, Utensils, Timer, Target, Trophy, Settings, Dumbbell, Droplet, Flame, Shield, Calculator, TrendingUp, X, Zap, Blocks, Brain, LogIn, LogOut, User, Send, CheckCircle2, Trash2, Loader2 } from 'lucide-react';
+import { Home, Utensils, Timer, Settings, Dumbbell, Droplet, Flame, Shield, X, Blocks, Brain, LogIn, LogOut, User, Send, CheckCircle2, Trash2, Loader2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import AuthModal from './components/AuthModal';
 import { supabase } from './lib/supabase';
-import { useTranslation } from 'react-i18next';
-
 const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
 const getDatePartsInTimeZone = (date: Date, timeZone: string) => {
@@ -57,8 +55,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
   const { isLoggedIn, signOut, user, openAuthModal, isAdmin, profile, refreshProfile, refreshTick } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
-  const { t } = useTranslation();
-  const [waterIntake, setWaterIntake] = useState(0);
+const [waterIntake, setWaterIntake] = useState(0);
   const [waterGoal, setWaterGoal] = useState(2.5);
   const [streakDays, setStreakDays] = useState(0);
 
@@ -107,20 +104,17 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
   }, [isLoggedIn, user, refreshTick]);
 
   const menuItems = [
-    { icon: Home, label: t('sidebar.overview', 'Tổng quan'), path: '/overview' },
-    { icon: Brain, label: t('sidebar.ai_planner', 'Lập kế hoạch AI'), path: '/smart-planner', badge: t('common.new', 'Mới'), badgeColor: 'bg-orange-500 text-white' },
-    { icon: Dumbbell, label: t('sidebar.exercises', 'Bài tập'), path: '/exercises' },
-    { icon: Utensils, label: t('sidebar.diet', 'Chế độ ăn'), path: '/diet-plan' },
-    { icon: Timer, label: t('sidebar.timer', 'Đồng hồ bấm giờ'), path: '/workout-timer' },
-    { icon: Target, label: t('sidebar.goals', 'Mục tiêu'), path: '/goals' },
-    { icon: Trophy, label: t('sidebar.achievements', 'Thành tích'), badge: '2', badgeColor: 'bg-[#a3e635] text-black', path: '/achievements' },
-    { icon: Blocks, label: t('sidebar.creator', 'Tạo bài tập'), path: '/workout-builder' },
-    { icon: TrendingUp, label: t('sidebar.progress', 'Tiến độ'), path: '/progress' },
-    { icon: Shield, label: t('sidebar.admin', 'Quản trị viên'), path: '/admin-panel', adminOnly: true },
+    { icon: Home, label: "Tổng quan", path: '/overview' },
+    { icon: Brain, label: "Lập kế hoạch AI", path: '/smart-planner', badge: "Mới", badgeColor: 'bg-orange-500 text-white' },
+    { icon: Dumbbell, label: "Bài tập", path: '/exercises' },
+    { icon: Utensils, label: "Chế độ ăn", path: '/diet-plan' },
+    { icon: Timer, label: "Đồng hồ bấm giờ", path: '/workout-timer' },
+    { icon: Blocks, label: "Tạo bài tập", path: '/workout-builder' },
+    { icon: Shield, label: "Quản trị viên", path: '/admin-panel', adminOnly: true },
   ];
 
   const handleUnlinkTelegram = async () => {
-    if (!confirm(t('sidebar.unlink_tg_confirm', 'Bạn có chắc chắn muốn hủy liên kết với Telegram Bot không?'))) return;
+    if (!confirm("Bạn có chắc chắn muốn hủy liên kết với Telegram Bot không?")) return;
     
     setIsUnlinking(true);
     try {
@@ -131,9 +125,9 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
 
       if (error) throw error;
       await refreshProfile();
-      alert(t('sidebar.unlink_tg_success', 'Đã hủy liên kết Telegram thành công'));
+      alert("Đã hủy liên kết Telegram thành công");
     } catch (err: any) {
-      alert(t('common.error', 'Lỗi: ') + err.message);
+      alert("Lỗi: " + err.message);
     } finally {
       setIsUnlinking(false);
       setIsSettingsOpen(false);
@@ -142,7 +136,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
 
   const filteredMenuItems = menuItems.filter(item => !item.adminOnly || isAdmin);
 
-  const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || t('common.member', 'Thành viên');
+  const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Thành viên";
   const nameParts = rawName.trim().split(/\s+/);
   const userName = nameParts.length > 1 
     ? `${nameParts[nameParts.length - 1]} ${nameParts[0]}` 
@@ -158,7 +152,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
           </div>
           <div>
             <h1 className="text-xl font-bold text-text-primary leading-tight">TrendFit</h1>
-            <p className="text-[10px] text-[#a3e635] font-semibold tracking-widest uppercase">{t('common.fitness_member', 'Thành viên Fitness')}</p>
+            <p className="text-[10px] text-[#a3e635] font-semibold tracking-widest uppercase">{"Thành viên Fitness"}</p>
           </div>
         </div>
         {onClose && (
@@ -202,7 +196,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Droplet className="w-4 h-4 text-blue-400" />
-              <span className="text-sm font-medium text-text-secondary">{t('sidebar.water_intake', 'Lượng nước uống')}</span>
+              <span className="text-sm font-medium text-text-secondary">{"Lượng nước uống"}</span>
             </div>
             <span className="text-[10px] text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity">+250ml</span>
           </div>
@@ -239,13 +233,13 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                       ? isExtra ? 'bg-emerald-500 shadow-sm shadow-emerald-500/20' : 'bg-blue-500 shadow-sm shadow-blue-500/20'
                       : isNext ? 'bg-blue-500/20 animate-pulse' : 'bg-bg-primary'
                   }`}
-                  title={isExtra ? t('sidebar.extra_cup', 'Cốc uống thêm') : undefined}
+                  title={isExtra ? "Cốc uống thêm" : undefined}
                 />
               );
             })}
           </div>
           <p className="text-xs font-medium text-text-primary">
-            {waterIntake.toFixed(2)}/{waterGoal} {t('sidebar.liters', 'Lít')}
+            {waterIntake.toFixed(2)}/{waterGoal} {"Lít"}
           </p>
         </div>
 
@@ -267,7 +261,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-quaternary rounded-xl transition-colors"
                   >
                     <User className="w-4 h-4" />
-                    {t('sidebar.change_password', 'Đổi mật khẩu')}
+                    {"Đổi mật khẩu"}
                   </button>
                   {profile?.telegram_chat_id ? (
                     <div className="flex items-center justify-between px-3 py-2 mt-1 bg-[#a3e635]/10 rounded-xl group/tg">
@@ -275,14 +269,14 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                         <CheckCircle2 className="w-4 h-4 text-[#a3e635]" />
                         <div className="flex flex-col">
                           <span className="text-[10px] text-[#a3e635] font-bold uppercase">Telegram</span>
-                          <span className="text-[9px] text-text-tertiary">{t('sidebar.connected', 'Đã kết nối')}</span>
+                          <span className="text-[9px] text-text-tertiary">{"Đã kết nối"}</span>
                         </div>
                       </div>
                       <button 
                         onClick={handleUnlinkTelegram}
                         disabled={isUnlinking}
                         className="p-1.5 hover:bg-red-500/10 text-text-tertiary hover:text-red-500 rounded-lg transition-all opacity-0 group-hover/tg:opacity-100"
-                        title={t('sidebar.unlink', 'Hủy liên kết')}
+                        title={"Hủy liên kết"}
                       >
                         {isUnlinking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                       </button>
@@ -296,7 +290,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:text-[#24A1DE] hover:bg-[#24A1DE]/5 rounded-xl transition-colors mt-1"
                     >
                       <Send className="w-4 h-4" />
-                      {t('sidebar.connect_tg', 'Kết nối Telegram Bot')}
+                      {"Kết nối Telegram Bot"}
                     </button>
                   )}
                   <button 
@@ -304,7 +298,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-xl transition-colors mt-1"
                   >
                     <LogOut className="w-4 h-4" />
-                    {t('common.logout', 'Đăng xuất')}
+                    {"Đăng xuất"}
                   </button>
                 </div>
               </>
@@ -321,7 +315,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
                 <div className="overflow-hidden">
                   <p className="text-sm font-semibold text-text-primary truncate">{userName}</p>
                   <p className="text-xs text-text-tertiary flex items-center gap-1">
-                    <Flame className="w-3 h-3 text-[#ff5e00]" /> {streakDays} {t('sidebar.streak_days', 'ngày liên tiếp')}
+                    <Flame className="w-3 h-3 text-[#ff5e00]" /> {streakDays} {"ngày liên tiếp"}
                   </p>
                 </div>
               </div>
@@ -339,7 +333,7 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
             className="w-full bg-[#a3e635] text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#bef264] transition-colors"
           >
             <LogIn className="w-5 h-5" />
-            {t('common.login', 'Đăng nhập')}
+            {"Đăng nhập"}
           </button>
         )}
       </div>

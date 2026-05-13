@@ -3,8 +3,6 @@ import AnimatedNumber from './components/AnimatedNumber';
 import { useAuth } from './contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
-import { useTranslation } from 'react-i18next';
-
 import { useOutletContext } from 'react-router-dom';
 
 const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
@@ -101,8 +99,7 @@ const buildSparklinePath = (values: number[]): string => {
 export default function MainContent() {
   const { onProfileClick } = useOutletContext<{ onProfileClick: () => void }>();
   const { user, isLoggedIn, refreshTick, profile } = useAuth();
-  const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
+const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     workout_duration: 0,
     calories_burned: 0,
@@ -276,7 +273,7 @@ export default function MainContent() {
   // Removed internal LoadingScreen as it's now handled by Overview.tsx
   // if (loading) return <LoadingScreen />;
 
-  const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || t('common.member', 'Thành viên');
+  const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Thành viên";
   const nameParts = rawName.trim().split(/\s+/);
   const userName = nameParts.length > 1 
     ? `${nameParts[nameParts.length - 1]} ${nameParts[0]}` 
@@ -299,23 +296,23 @@ export default function MainContent() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 w-full">
             <div className="max-w-4xl">
               <h2 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-white leading-[1.1] mb-2 uppercase tracking-tighter">
-                {t('dashboard.welcome_title', { name: userName })} <span className="text-[#a3e635]">TRENDFIT AI</span> -<br className="hidden sm:block" />
-                {t('dashboard.welcome_subtitle')}
+                {`CHÀO MỪNG ${userName} ĐẾN VỚI`} <span className="text-[#a3e635]">TRENDFIT AI</span> -<br className="hidden sm:block" />
+                {"DỮ LIỆU CỦA BẠN, THÀNH CÔNG CỦA BẠN."}
               </h2>
               <p className="text-[9px] sm:text-xs md:text-sm text-white/80 mb-4 max-w-lg">
-                {t('dashboard.ai_ready', { minutes: stats.workout_duration })}
+                {`Hôm nay AI đã sẵn sàng lộ trình tập luyện ${stats.workout_duration} phút cho bạn.`}
               </p>
               <button 
                 onClick={onProfileClick}
                 className="text-[#a3e635] font-bold flex items-center gap-1 hover:text-[#bef264] transition-colors group uppercase tracking-widest text-[8px] sm:text-[9px] md:text-[10px]"
               >
-                {t('dashboard.view_profile')} < ArrowRight className="w-2 h-2 sm:w-3 sm:h-3 transition-transform group-hover:translate-x-1" />
+                {"Xem chi tiết hồ sơ"} < ArrowRight className="w-2 h-2 sm:w-3 sm:h-3 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
             
             <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10 shrink-0">
               <div className="w-2 h-2 rounded-full bg-[#a3e635] animate-pulse"></div>
-              <span className="text-sm font-medium text-white">{t('dashboard.online_session')}</span>
+              <span className="text-sm font-medium text-white">{"Buổi tập trực tuyến"}</span>
             </div>
           </div>
         </div>
@@ -327,14 +324,14 @@ export default function MainContent() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Dumbbell className="w-5 h-5 text-blue-400" />
-              <span className="text-sm font-medium text-text-secondary">{t('dashboard.remaining_workouts')}</span>
+              <span className="text-sm font-medium text-text-secondary">{"Bài tập còn lại"}</span>
             </div>
             <span className="text-text-tertiary">...</span>
           </div>
           <div className="flex items-end justify-between">
             <div className="flex flex-col">
               <span className="text-2xl md:text-3xl font-bold text-text-primary">{stats.remaining_workouts}</span>
-              <span className="text-[10px] md:text-sm text-text-tertiary font-medium">{t('dashboard.workouts_unit')}</span>
+              <span className="text-[10px] md:text-sm text-text-tertiary font-medium">{"Bài"}</span>
             </div>
             <svg className="w-16 md:w-24 h-8" viewBox="0 0 100 30">
               <path d={buildSparklinePath(weeklyTrend.workouts)} fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" />
@@ -346,7 +343,7 @@ export default function MainContent() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Flame className="w-5 h-5 text-[#ff5e00]" />
-              <span className="text-sm font-medium text-text-secondary">{t('dashboard.calories_burned')}</span>
+              <span className="text-sm font-medium text-text-secondary">{"Năng lượng tiêu hao"}</span>
             </div>
             <span className="text-text-tertiary">...</span>
           </div>
@@ -367,7 +364,7 @@ export default function MainContent() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Activity className="w-5 h-5 text-[#a3e635]" />
-              <span className="text-sm font-medium text-text-secondary">{t('dashboard.exercise')}</span>
+              <span className="text-sm font-medium text-text-secondary">{"Luyện tập"}</span>
             </div>
             <span className="text-text-tertiary">...</span>
           </div>
@@ -376,7 +373,7 @@ export default function MainContent() {
               <span className="text-2xl md:text-3xl font-bold text-text-primary">
                 <AnimatedNumber value={stats.workout_duration} />
               </span>
-              <span className="text-[10px] md:text-sm text-text-tertiary font-medium">{t('dashboard.minutes_unit')}</span>
+              <span className="text-[10px] md:text-sm text-text-tertiary font-medium">{"Phút"}</span>
             </div>
             <svg className="w-16 md:w-24 h-8" viewBox="0 0 100 30">
               <path d={buildSparklinePath(weeklyTrend.minutes)} fill="none" stroke="#a3e635" strokeWidth="2" strokeLinecap="round" />
@@ -388,16 +385,16 @@ export default function MainContent() {
       {/* Featured Course */}
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-text-primary">{t('dashboard.featured_courses')}</h3>
+          <h3 className="text-xl font-bold text-text-primary">{"Khóa học nổi bật"}</h3>
           <a href="#" className="text-sm font-medium text-[#a3e635] flex items-center gap-1 hover:underline">
-            {t('dashboard.view_all')} < ArrowRight className="w-4 h-4" />
+            {"Xem tất cả"} < ArrowRight className="w-4 h-4" />
           </a>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {[
-            { title: t('courses.weightlifting', 'Nâng tạ'), level: t('levels.advanced', 'Nâng cao'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/weight-lifting.jpg' },
-            { title: t('courses.muscle_growth', 'Phát triển cơ bắp'), level: t('levels.intermediate', 'Trung cấp'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/muscle-training.jpg' },
-            { title: t('courses.crossfit', 'CrossFit'), level: t('levels.all', 'Mọi cấp độ'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/cross-fit.jpg' }
+            { title: "Nâng tạ", level: "Nâng cao", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/weight-lifting.jpg' },
+            { title: "Phát triển cơ bắp", level: "Trung cấp", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/muscle-training.jpg' },
+            { title: "CrossFit", level: "Mọi cấp độ", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/cross-fit.jpg' }
           ].map((course, i) => (
             <div key={i} className="group relative rounded-2xl overflow-hidden h-48 cursor-pointer">
               <img src={course.img} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
@@ -420,17 +417,17 @@ export default function MainContent() {
       {/* Services */}
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-text-primary">{t('dashboard.services')}</h3>
+          <h3 className="text-xl font-bold text-text-primary">{"Dịch vụ"}</h3>
           <a href="#" className="text-sm font-medium text-[#a3e635] flex items-center gap-1 hover:underline">
-            {t('dashboard.view_all')} < ArrowRight className="w-4 h-4" />
+            {"Xem tất cả"} < ArrowRight className="w-4 h-4" />
           </a>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { title: t('services.workout_program', 'Chương trình tập luyện'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/WORKOUT%20PROGRAM.jpg' },
-            { title: t('services.nutrition_plan', 'Kế hoạch dinh dưỡng'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/NUTRITION%20PLAN.jpg' },
-            { title: t('services.practice_time', 'Thời gian thực hành'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/PRACTICE%20TIME.jpg' },
-            { title: t('services.diet_program', 'Chương trình ăn kiêng'), img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/DIET%20PROGRAM.jpg' }
+            { title: "Chương trình tập luyện", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/WORKOUT%20PROGRAM.jpg' },
+            { title: "Kế hoạch dinh dưỡng", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/NUTRITION%20PLAN.jpg' },
+            { title: "Thời gian thực hành", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/PRACTICE%20TIME.jpg' },
+            { title: "Chương trình ăn kiêng", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/Services/DIET%20PROGRAM.jpg' }
           ].map((service, i) => (
             <div key={i} className="bg-bg-secondary rounded-2xl overflow-hidden border border-border-primary cursor-pointer hover:border-[#a3e635] transition-colors">
               <div className="h-32 overflow-hidden">
@@ -448,32 +445,32 @@ export default function MainContent() {
       <div className="bg-bg-secondary rounded-2xl p-6 border border-border-primary">
         <div className="flex items-center gap-2 mb-6">
           <Activity className="w-5 h-5 text-[#a3e635]" />
-          <h3 className="text-lg font-bold text-text-primary">{t('dashboard.weekly_summary')}</h3>
+          <h3 className="text-lg font-bold text-text-primary">{"Tổng hợp hàng tuần"}</h3>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div className="py-2 md:py-0">
             <p className="text-3xl font-bold text-[#a3e635] mb-1">
               <AnimatedNumber value={weeklyStats.total_workouts} />
             </p>
-            <p className="text-xs text-text-tertiary font-medium">{t('dashboard.total_workouts')}</p>
+            <p className="text-xs text-text-tertiary font-medium">{"Buổi tập"}</p>
           </div>
           <div>
             <p className="text-3xl font-bold text-[#ff5e00] mb-1">
               <AnimatedNumber value={weeklyStats.total_calories} />
             </p>
-            <p className="text-xs text-text-tertiary font-medium">{t('dashboard.total_calories')}</p>
+            <p className="text-xs text-text-tertiary font-medium">{"Calo tiêu thụ"}</p>
           </div>
           <div>
             <p className="text-3xl font-bold text-[#06b6d4] mb-1">
               <AnimatedNumber value={weeklyStats.total_minutes} />
             </p>
-            <p className="text-xs text-text-tertiary font-medium">{t('dashboard.total_minutes')}</p>
+            <p className="text-xs text-text-tertiary font-medium">{"Phút"}</p>
           </div>
           <div className="py-2 md:py-0">
             <p className="text-2xl md:text-3xl font-bold text-[#ec4899] mb-1">
               <AnimatedNumber value={weeklyStats.streak} />
             </p>
-            <p className="text-xs text-text-tertiary font-medium">{t('dashboard.streak')}</p>
+            <p className="text-xs text-text-tertiary font-medium">{"Ngày liên tiếp"}</p>
           </div>
         </div>
       </div>

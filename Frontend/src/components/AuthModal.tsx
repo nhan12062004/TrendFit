@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useTranslation } from 'react-i18next';
-
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const { t } = useTranslation();
-  const [isLogin, setIsLogin] = useState(true);
+const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -47,7 +44,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         onClose();
       } else {
         if (password !== confirmPassword) {
-          throw new Error(t('auth.password_mismatch', 'Passwords do not match'));
+          throw new Error("Mật khẩu không khớp");
         }
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -212,7 +209,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             
             {!isLogin && (
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-text-secondary ml-1">{t('auth.confirm_password', 'Confirm Password')}</label>
+                <label className="text-xs font-semibold text-text-secondary ml-1">{"Xác nhận mật khẩu"}</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
                   <input
@@ -253,22 +250,22 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <div className="mt-8 pt-6 border-t border-border-primary text-center">
             {isLogin ? (
               <p className="text-xs text-text-tertiary font-medium">
-                {t('auth.no_account', "Don't have an account?")}{' '}
+                {"Chưa có tài khoản?"}{' '}
                 <button
                   onClick={() => setIsLogin(false)}
                   className="font-bold text-text-secondary hover:text-[#a3e635] transition-colors"
                 >
-                  {t('auth.signup', 'Sign Up')}
+                  {"Đăng ký"}
                 </button>
               </p>
             ) : (
               <p className="text-xs text-text-tertiary font-medium">
-                {t('auth.has_account', 'Already have an account?')}{' '}
+                {"Đã có tài khoản?"}{' '}
                 <button
                   onClick={() => setIsLogin(true)}
                   className="font-bold text-text-secondary hover:text-[#a3e635] transition-colors"
                 >
-                  {t('auth.login', 'Log In')}
+                  {"Đăng nhập"}
                 </button>
               </p>
             )}

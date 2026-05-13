@@ -1,14 +1,10 @@
 import { Search, Moon, Sun, Bell, MessageSquare, Menu, LogIn } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
-import { useTranslation } from 'react-i18next';
-
 export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: () => void, onProfileClick?: () => void }) {
   const [isLightMode, setIsLightMode] = useState(false);
   const { isLoggedIn, openAuthModal, user, profile } = useAuth();
-  const { t } = useTranslation();
-
-  const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || t('common.member', 'Thành viên');
+const rawName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Thành viên";
   const nameParts = rawName.trim().split(/\s+/);
   const userName = nameParts.length > 1 
     ? `${nameParts[nameParts.length - 1]} ${nameParts[0]}` 
@@ -33,7 +29,7 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="text"
-            placeholder={t('topbar.search_placeholder', 'Tìm kiếm bài tập, thực đơn,...')}
+            placeholder={"Tìm kiếm bài tập, thực đơn,..."}
             className="w-full bg-bg-secondary border border-border-primary rounded-full py-3 pl-12 pr-4 text-sm text-text-primary placeholder-text-tertiary focus:outline-none focus:border-[#a3e635]"
           />
         </div>
@@ -70,7 +66,7 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
             className="bg-[#a3e635] text-black px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 hover:bg-[#bef264] transition-colors"
           >
             <LogIn className="w-4 h-4" />
-            {t('common.login', 'Đăng nhập')}
+            {"Đăng nhập"}
           </button>
         )}
       </div>

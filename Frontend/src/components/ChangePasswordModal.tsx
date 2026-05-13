@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Lock, ShieldCheck, Loader2, X, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from 'react-i18next';
-
 interface ChangePasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -11,8 +9,7 @@ interface ChangePasswordModalProps {
 
 export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
   const { user } = useAuth();
-  const { t } = useTranslation();
-  const [oldPassword, setOldPassword] = useState('');
+const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,17 +21,17 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
     setMessage({ type: '', text: '' });
 
     if (!user?.email) {
-      setMessage({ type: 'error', text: t('auth.change_password.errors.email_not_found') });
+      setMessage({ type: 'error', text: "Không tìm thấy thông tin email người dùng" });
       return;
     }
 
     if (newPassword.length < 6) {
-      setMessage({ type: 'error', text: t('auth.change_password.errors.password_too_short') });
+      setMessage({ type: 'error', text: "Mật khẩu mới phải có ít nhất 6 ký tự" });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setMessage({ type: 'error', text: t('auth.change_password.errors.password_mismatch') });
+      setMessage({ type: 'error', text: "Mật khẩu xác nhận không khớp" });
       return;
     }
 
@@ -47,7 +44,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
       });
 
       if (authError) {
-        throw new Error(t('auth.change_password.errors.incorrect_old_password'));
+        throw new Error("Mật khẩu hiện tại không chính xác");
       }
 
       // BƯỚC 2: Cập nhật mật khẩu mới
@@ -57,7 +54,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
       if (updateError) throw updateError;
 
-      setMessage({ type: 'success', text: t('auth.change_password.success') });
+      setMessage({ type: 'success', text: "Đổi mật khẩu thành công!" });
       setTimeout(() => {
         setOldPassword('');
         setNewPassword('');
@@ -66,7 +63,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
         setMessage({ type: '', text: '' });
       }, 2000);
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || t('auth.change_password.errors.generic') });
+      setMessage({ type: 'error', text: err.message || "Có lỗi xảy ra, vui lòng thử lại" });
     } finally {
       setLoading(false);
     }
@@ -87,13 +84,13 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
           <div className="w-16 h-16 bg-[#a3e635]/10 rounded-2xl flex items-center justify-center mb-4 border border-[#a3e635]/20">
             <Lock className="w-8 h-8 text-[#a3e635]" />
           </div>
-          <h2 className="text-xl font-black text-white uppercase tracking-tight">{t('auth.change_password.title')}</h2>
-          <p className="text-xs text-text-secondary mt-1">{t('auth.change_password.subtitle')}</p>
+          <h2 className="text-xl font-black text-white uppercase tracking-tight">{"Đổi mật khẩu mới"}</h2>
+          <p className="text-xs text-text-secondary mt-1">{"Vui lòng nhập mật khẩu mới để bảo mật tài khoản của bạn"}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{t('auth.change_password.old_password')}</label>
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{"Mật khẩu hiện tại"}</label>
             <div className="relative">
               <input
                 required
@@ -101,13 +98,13 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
                 className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 text-sm outline-none focus:border-red-500/50 text-white pr-12"
-                placeholder={t('auth.change_password.placeholders.old_password')}
+                placeholder={"Nhập mật khẩu hiện tại"}
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{t('auth.change_password.new_password')}</label>
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{"Mật khẩu mới"}</label>
             <div className="relative">
               <input
                 required
@@ -115,7 +112,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 text-sm outline-none focus:border-[#a3e635] text-white pr-12"
-                placeholder={t('auth.change_password.placeholders.new_password')}
+                placeholder={"Nhập ít nhất 6 ký tự"}
               />
               <button
                 type="button"
@@ -128,14 +125,14 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{t('auth.change_password.confirm_password')}</label>
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">{"Xác nhận mật khẩu"}</label>
             <input
               required
               type={showPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 text-sm outline-none focus:border-[#a3e635] text-white"
-              placeholder={t('auth.change_password.placeholders.confirm_password')}
+              placeholder={"Nhập lại mật khẩu mới"}
             />
           </div>
 
@@ -152,7 +149,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
             disabled={loading}
             className="w-full bg-[#a3e635] text-black font-black py-3 rounded-xl hover:bg-[#bef264] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-[#a3e635]/10 mt-2 disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('auth.change_password.submit')}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "XÁC NHẬN THAY ĐỔI"}
           </button>
         </form>
       </div>

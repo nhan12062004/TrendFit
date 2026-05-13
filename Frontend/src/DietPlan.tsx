@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, Trash2, Plus, Save, Loader2, ChevronLeft, ChevronRight, Utensils, Coffee, Sun, Moon as MoonIcon, Cookie, X, Flame, PlusCircle } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { DndContext, useDraggable, useDroppable, closestCenter, pointerWithin, DragEndEvent, PointerSensor, KeyboardSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -306,9 +305,7 @@ const FoodLibraryItem = ({ food, onAdd }: { food: Food; onAdd: (f: Food) => void
 // ===== MAIN COMPONENT =====
 export default function DietPlan() {
   const { user } = useAuth();
-  const { t } = useTranslation();
-
-  const [foods, setFoods] = useState<Food[]>([]);
+const [foods, setFoods] = useState<Food[]>([]);
   const [selectedDayId, setSelectedDayId] = useState(getTodayDayIndex());
   const [weeklyPlan, setWeeklyPlan] = useState<Record<number, PlanFood[]>>({});
   const [restDays, setRestDays] = useState<Record<number, boolean>>({});

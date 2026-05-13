@@ -1,7 +1,5 @@
 import React from 'react';
 import { CheckCircle2, Home, LogIn, ArrowRight } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-
 interface VerificationSuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -9,9 +7,7 @@ interface VerificationSuccessModalProps {
 }
 
 export default function VerificationSuccessModal({ isOpen, onClose, onLoginClick }: VerificationSuccessModalProps) {
-  const { t } = useTranslation();
-
-  if (!isOpen) return null;
+if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -33,10 +29,10 @@ export default function VerificationSuccessModal({ isOpen, onClose, onLoginClick
           </div>
 
           <h2 className="text-3xl font-bold text-text-primary mb-4 tracking-tight">
-            {t('auth.verification.success_title', 'Email verified!')}
+            {"Email verified!"}
           </h2>
           <p className="text-text-secondary mb-10 leading-relaxed max-w-[280px] mx-auto">
-            {t('auth.verification.success_desc', 'Your account has been successfully verified. You are now ready to start your fitness journey.')}
+            {"Your account has been successfully verified. You are now ready to start your fitness journey."}
           </p>
 
           <div className="grid gap-4">
@@ -45,7 +41,7 @@ export default function VerificationSuccessModal({ isOpen, onClose, onLoginClick
               className="w-full bg-[#a3e635] text-black font-bold py-4 rounded-2xl hover:bg-[#bef264] transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group shadow-lg shadow-[#a3e635]/10"
             >
               <LogIn className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-              {t('auth.login', 'Log In')}
+              {"Đăng nhập"}
               <ArrowRight className="w-5 h-5 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
             </button>
 
@@ -54,7 +50,7 @@ export default function VerificationSuccessModal({ isOpen, onClose, onLoginClick
               className="w-full bg-bg-tertiary text-text-secondary font-bold py-4 rounded-2xl border border-border-primary hover:bg-bg-primary hover:text-text-primary transition-all flex items-center justify-center gap-2"
             >
               <Home className="w-5 h-5" />
-              {t('nav.home', 'Go to Home')}
+              {"Go to Home"}
             </button>
           </div>
         </div>

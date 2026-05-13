@@ -5,7 +5,6 @@ import {
   CheckCircle, Play, Info, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
 import { supabase } from './lib/supabase';
 import { useAuth } from './contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -112,8 +111,7 @@ const pickLatestPlan = (plans: any[] | null | undefined) => {
 
 export default function Exercises() {
   const { user } = useAuth();
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+const navigate = useNavigate();
 
   const [session, setSession] = useState<SessionExercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -286,7 +284,7 @@ export default function Exercises() {
   };
 
   const deleteExercise = async (id: string) => {
-    if (!confirm(t('common.confirm_delete', 'Bạn có chắc chắn muốn xóa không?'))) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa không?")) return;
     const removedItem = session.find(s => s.id === id);
     setSession(prev => prev.filter(s => s.id !== id));
 
@@ -488,9 +486,9 @@ export default function Exercises() {
       }
       setIsAdding(false);
       setSelectedExercise(null);
-      alert(t('sidebar.exercise_added_today'));
+      alert("Đã thêm vào buổi tập hôm nay");
     } catch (e: any) {
-      alert((t('common.error', 'Lỗi') + ': ') + (e?.message || 'Lưu bài tập thất bại'));
+      alert(("Lỗi: " + ': ') + (e?.message || 'Lưu bài tập thất bại'));
     } finally {
       setIsSavingExercise(false);
     }
@@ -505,7 +503,7 @@ export default function Exercises() {
         <div>
           <h1 className="text-3xl font-black text-text-primary uppercase flex items-center gap-2">
             <Dumbbell className="w-8 h-8 text-[#a3e635]" />
-            {t('sidebar.exercises_tracker', 'Theo dõi bài tập')}
+            {"Theo dõi bài tập"}
           </h1>
           <p className="text-sm text-text-tertiary mt-1 font-medium">
             {new Intl.DateTimeFormat('vi-VN', {
@@ -523,7 +521,7 @@ export default function Exercises() {
         >
           <span className="inline-flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" />
-            {t('common.add_new', 'Thêm mới')}
+            {"Thêm mới"}
           </span>
         </button>
       </div>
@@ -574,11 +572,11 @@ export default function Exercises() {
                           </div>
                           <div className="flex-1 grid grid-cols-2 gap-2">
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.sets')}</span>
+                              <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{"Hiệp"}</span>
                               <div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm text-text-primary font-bold">{ex.sets}</div>
                             </div>
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.reps')}</span>
+                              <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{"Lần"}</span>
                               <div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm text-text-primary font-bold">{ex.reps}</div>
                             </div>
                             <div className="flex flex-col gap-1">
@@ -612,8 +610,8 @@ export default function Exercises() {
                         <div className="flex-1 min-w-0">
                           <h3 className={`text-sm font-bold uppercase truncate ${ex.is_completed ? 'text-text-tertiary line-through' : 'text-text-primary'}`}>{ex.name}</h3>
                           <div className="flex flex-wrap gap-4 mt-2.5">
-                            <div className="flex flex-col gap-1"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.sets')}</span><div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 text-text-primary font-bold">{ex.sets}</div></div>
-                            <div className="flex flex-col gap-1"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{t('workout_builder.reps')}</span><div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 text-text-primary font-bold">{ex.reps}</div></div>
+                            <div className="flex flex-col gap-1"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{"Hiệp"}</span><div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 text-text-primary font-bold">{ex.sets}</div></div>
+                            <div className="flex flex-col gap-1"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">{"Lần"}</span><div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 text-text-primary font-bold">{ex.reps}</div></div>
                             <div className="flex flex-col gap-1"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">KG</span><div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 text-text-primary font-bold">{ex.weight_kg}</div></div>
                             <div className="flex flex-col gap-1"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">REST (S)</span><div className="bg-bg-tertiary border border-border-primary rounded-lg px-2 py-1 text-sm w-16 text-text-primary font-bold">{ex.rest_seconds}</div></div>
                             <div className="flex flex-col gap-1 ml-auto"><span className="text-[10px] text-text-tertiary font-bold uppercase tracking-widest">KCAL</span><div className="h-[34px] min-w-[76px] px-2 rounded-lg bg-[#a3e635]/10 border border-[#a3e635]/30 text-[#a3e635] flex items-center justify-center"><span className="text-xs font-black tabular-nums">{displayKcal}</span></div></div>
@@ -635,11 +633,11 @@ export default function Exercises() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-[#a3e635]/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-[#a3e635]/10 transition-all"></div>
                   <div className="flex items-center justify-between relative z-10">
                     <div>
-                      <h4 className="text-sm font-bold text-text-tertiary uppercase tracking-widest mb-1">{t('dashboard.weekly_summary')}</h4>
+                      <h4 className="text-sm font-bold text-text-tertiary uppercase tracking-widest mb-1">{"Tổng hợp hàng tuần"}</h4>
                       <p className="text-2xl font-black text-text-primary">
                         {session.filter(s => s.is_completed).length} / {session.length}
                       </p>
-                      <p className="text-xs text-text-tertiary mt-1">{t('dashboard.exercise', 'Bài tập')} {t('sidebar.connected', 'đã xong')}</p>
+                      <p className="text-xs text-text-tertiary mt-1">{"Luyện tập"} {"Đã kết nối"}</p>
                     </div>
                     <div className="relative w-16 h-16">
                       <svg viewBox="0 0 36 36" className="w-full h-full">
@@ -666,22 +664,22 @@ export default function Exercises() {
                 <div className="w-20 h-20 bg-bg-secondary rounded-3xl flex items-center justify-center mb-6 shadow-xl border border-border-primary group hover:border-[#a3e635] transition-all">
                   <AlertCircle className="w-10 h-10 text-text-tertiary group-hover:text-[#a3e635] transition-all" />
                 </div>
-                <h3 className="text-2xl font-black text-text-primary mb-2 uppercase tracking-tight">{t('sidebar.no_schedule_today')}</h3>
+                <h3 className="text-2xl font-black text-text-primary mb-2 uppercase tracking-tight">{"Hôm nay không có lịch tập nào."}</h3>
                 <p className="text-text-tertiary max-w-sm mb-8 leading-relaxed">
-                  {t('workout_builder.empty_day')}
+                  {"Ngày này chưa có bài tập nào. Hãy kéo thả từ thư viện!"}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <button 
                     onClick={() => setIsAdding(true)}
                     className="px-8 py-3 bg-[#a3e635] text-black rounded-2xl font-black uppercase text-sm hover:scale-105 transition-all shadow-lg shadow-[#a3e635]/20"
                   >
-                    {t('common.add_new')}
+                    {"Thêm mới"}
                   </button>
                   <button 
                     onClick={() => navigate('/workout-builder')}
                     className="px-8 py-3 bg-bg-secondary border border-border-primary text-text-primary rounded-2xl font-black uppercase text-sm hover:bg-bg-quaternary transition-all"
                   >
-                    {t('workout_builder.title')}
+                    {"Tạo bài tập"}
                   </button>
                 </div>
               </div>
@@ -708,7 +706,7 @@ export default function Exercises() {
             >
               <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
                 <h3 className="text-base md:text-lg font-black uppercase tracking-wide text-text-primary">
-                  {t('common.add_new', 'Thêm mới')}
+                  {"Thêm mới"}
                 </h3>
                 <button
                   onClick={() => setIsAdding(false)}
@@ -723,7 +721,7 @@ export default function Exercises() {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="text"
-                  placeholder={t('sidebar.search_exercises')}
+                  placeholder={"Tìm kiếm bài tập..."}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full bg-bg-tertiary border border-border-primary rounded-2xl py-4 pl-12 pr-6 text-sm focus:border-[#a3e635] outline-none transition-all font-medium"

@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 // Import client Supabase ta vừa tạo
 import { supabase } from './config/supabase';
 import { initTelegramBot } from './telegramBot';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 dotenv.config();
 
