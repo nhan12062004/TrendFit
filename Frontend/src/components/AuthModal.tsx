@@ -96,7 +96,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setFullName('');
     setError(null);
     setIsEmailSent(false);
-    setIsLogin(true); 
+    setIsLogin(true);
   };
 
   const handleClose = () => {

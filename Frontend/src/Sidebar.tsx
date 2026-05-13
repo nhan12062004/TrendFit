@@ -1,4 +1,4 @@
-import { Home, Utensils, Timer, Settings, Dumbbell, Droplet, Flame, Shield, X, Blocks, Brain, LogIn, LogOut, User, Send, CheckCircle2, Trash2, Loader2 } from 'lucide-react';
+import { Home, Utensils, Timer, Settings, Dumbbell, Droplet, Flame, Shield, X, Blocks, Brain, LogIn, LogOut, User, Send, CheckCircle2, Trash2, Loader2, GlassWater } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { useState, useEffect } from 'react';
@@ -193,20 +193,19 @@ const [waterIntake, setWaterIntake] = useState(0);
         <div 
           className="bg-bg-tertiary rounded-xl p-4 mb-4 transition-colors group"
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center mb-2">
             <div className="flex items-center gap-2">
               <Droplet className="w-4 h-4 text-blue-400" />
               <span className="text-sm font-medium text-text-secondary">{"Lượng nước uống"}</span>
             </div>
-            <span className="text-[10px] text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity">+250ml</span>
           </div>
-          <div className="flex flex-wrap gap-1 mb-2">
-            {Array.from({ length: Math.max(Math.ceil(waterGoal / 0.25), Math.floor(waterIntake / 0.25) + 1) }).map((_, idx) => {
+          <div className="flex items-center gap-2 mb-2">
+            {Array.from({ length: 5 }).map((_, idx) => {
               const i = idx + 1;
-              const cupSize = 0.25;
+              const cupSize = waterGoal / 5;
               const isFilled = waterIntake >= i * cupSize;
-              const isNext = !isFilled && waterIntake >= (i - 1) * cupSize;
-              const isExtra = i * cupSize > waterGoal;
+              const isPartial = !isFilled && waterIntake > (i - 1) * cupSize;
+              const fillPercent = isPartial ? ((waterIntake - (i - 1) * cupSize) / cupSize) * 100 : 0;
               
               return (
                 <div 
@@ -220,7 +219,7 @@ const [waterIntake, setWaterIntake] = useState(0);
                       .upsert({ 
                         user_id: user?.id, 
                         log_date: today, 
-                        water_intake_ml: newIntake * 1000 
+                        water_intake_ml: Math.round(newIntake * 1000) 
                       }, { onConflict: 'user_id,log_date' });
                     
                     if (!error) {
@@ -228,19 +227,24 @@ const [waterIntake, setWaterIntake] = useState(0);
                       refreshProfile();
                     }
                   }}
-                  className={`h-6 w-6 rounded-md cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 ${
-                    isFilled 
-                      ? isExtra ? 'bg-emerald-500 shadow-sm shadow-emerald-500/20' : 'bg-blue-500 shadow-sm shadow-blue-500/20'
-                      : isNext ? 'bg-blue-500/20 animate-pulse' : 'bg-bg-primary'
-                  }`}
-                  title={isExtra ? "Cốc uống thêm" : undefined}
-                />
+                  className="flex-1 cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95"
+                  title={`${(cupSize * 1000).toFixed(0)}ml`}
+                >
+                  <GlassWater 
+                    className={`w-7 h-7 transition-all duration-300 ${
+                      isFilled 
+                        ? 'text-blue-400 fill-blue-500/40 drop-shadow-[0_0_6px_rgba(96,165,250,0.4)]' 
+                        : isPartial 
+                          ? 'text-blue-400/50 fill-blue-500/15' 
+                          : 'text-gray-600/30 fill-transparent'
+                    }`}
+                    strokeWidth={1.5}
+                  />
+                </div>
               );
             })}
           </div>
-          <p className="text-xs font-medium text-text-primary">
-            {waterIntake.toFixed(2)}/{waterGoal} {"Lít"}
-          </p>
+
         </div>
 
         {isLoggedIn ? (
