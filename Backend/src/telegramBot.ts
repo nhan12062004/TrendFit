@@ -2,11 +2,42 @@ import TelegramBot from 'node-telegram-bot-api';
 import { supabase } from './config/supabase';
 import dotenv from 'dotenv';
 import cron from 'node-cron';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 dotenv.config();
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
+
+// === BỘ NHỚ HỘI THOẠI ===
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+}
+
+const conversationStore = new Map<number, ChatMessage[]>();
+const MAX_HISTORY = 20; // Giữ tối đa 20 tin nhắn gần nhất
+const HISTORY_TTL_MS = 2 * 60 * 60 * 1000; // Xóa sau 2 giờ không hoạt động
+
+function getHistory(chatId: number): ChatMessage[] {
+  const history = conversationStore.get(chatId) || [];
+  const now = Date.now();
+  // Lọc bỏ tin nhắn quá cũ
+  const fresh = history.filter(m => now - m.timestamp < HISTORY_TTL_MS);
+  if (fresh.length !== history.length) conversationStore.set(chatId, fresh);
+  return fresh;
+}
+
+function addToHistory(chatId: number, role: 'user' | 'assistant', content: string) {
+  const history = getHistory(chatId);
+  history.push({ role, content, timestamp: Date.now() });
+  // Giữ tối đa MAX_HISTORY tin
+  if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
+  conversationStore.set(chatId, history);
+}
+
+function clearHistory(chatId: number) {
+  conversationStore.delete(chatId);
+}
 
 // Các khung giờ nhắc uống nước (9h, 11h, 14h, 16h, 20h, 22h)
 const REMINDER_HOURS = ['0 9 * * *', '0 11 * * *', '0 14 * * *', '0 16 * * *', '0 20 * * *', '0 22 * * *'];
@@ -239,9 +270,15 @@ export const initTelegramBot = () => {
     bot.sendMessage(chatId, 'Chào mừng bạn đến với AI Fitness Assistant! 🚀\n\nĐể tôi có thể nhận diện và hỗ trợ bạn tốt nhất, hãy nhấn nút "Kết nối AI Bot Telegram" trong phần Cài đặt trên ứng dụng TrendFit nhé.');
   });
 
-  // Xử lý tin nhắn thông thường với Gemini AI
+  // Lệnh /clear - Xóa lịch sử cuộc trò chuyện
+  bot.onText(/\/clear/, (msg) => {
+    clearHistory(msg.chat.id);
+    bot.sendMessage(msg.chat.id, '🧹 Đã xóa lịch sử trò chuyện. Bạn có thể bắt đầu cuộc hội thoại mới!');
+  });
+
+  // Xử lý tin nhắn thông thường với AI
   bot.on('message', async (msg) => {
-    if (msg.text?.startsWith('/start') || !msg.text) return;
+    if (msg.text?.startsWith('/') || !msg.text) return;
 
     const chatId = msg.chat.id;
     const userMessage = msg.text;
@@ -256,8 +293,6 @@ export const initTelegramBot = () => {
         .select('id, full_name, gender')
         .eq('telegram_chat_id', chatId.toString())
         .maybeSingle();
-
-      let finalPrompt = "";
 
       if (userProfile?.id) {
         // Lấy ngày hôm nay theo giờ VN để query
@@ -533,59 +568,117 @@ export const initTelegramBot = () => {
            todayStatus += `- Bài tập: Trống\n`;
         }
 
-        finalPrompt = `Bạn là "TrendFit Master AI" - PT cá nhân ảo của TrendFit. Trả lời thẳng, ngắn, chính xác.
+        // === XÂY DỰNG SYSTEM PROMPT CHUYÊN NGHIỆP ===
+        const systemPrompt = `Bạn là "TrendFit AI" — Huấn luyện viên cá nhân & Chuyên gia dinh dưỡng cấp cao của ứng dụng TrendFit.
 
-[KHÁCH] ${userProfile.full_name || 'Bạn'} | ${bodyMetrics.data?.weight || '?'}kg | Budget: ${lifestyle.data?.budget_level || 'TB'} | Bệnh: ${health.data?.health_condition || 'Không'}
+[HỒ SƠ KHÁCH HÀNG]
+- Tên: ${userProfile.full_name || 'Học viên'}
+- Cân nặng: ${bodyMetrics.data?.weight || '?'}kg | Chiều cao: ${bodyMetrics.data?.height || '?'}cm
+- Mục tiêu cân nặng: ${bodyMetrics.data?.target_weight || '?'}kg
+- Mục tiêu tập: ${lifestyle.data?.fitness_goal || 'Nâng cao sức khỏe'}
+- Trình độ: ${lifestyle.data?.experience_level || 'Chưa rõ'} | Vận động: ${lifestyle.data?.activity_level || 'Chưa rõ'}
+- Nơi tập: ${lifestyle.data?.workout_location || '?'} | Dụng cụ: ${lifestyle.data?.equipment_available || '?'}
+- Budget: ${lifestyle.data?.budget_level || 'TB'}
+- Bệnh lý: ${health.data?.health_condition || 'Không'} | Chấn thương: ${health.data?.injuries || 'Không'}
+- Dị ứng: ${health.data?.allergies || 'Không'}
 
-[DATA HÔM NAY ${today}]
+[TIẾN ĐỘ HÔM NAY ${today}]
 ${todayStatus}
 ${actionLog ? `[HỆ THỐNG VỪA THỰC HIỆN]\n${actionLog}` : ''}
-Khách nhắn: "${userMessage}"
+[PHONG CÁCH TRẢ LỜI]
+1. Trả lời chuyên nghiệp, thân thiện nhưng đi thẳng vào vấn đề.
+2. CHỈ trả lời đúng câu hỏi được hỏi — không nhét thêm thông tin khác.
+3. Nếu hệ thống vừa thực hiện hành động, xác nhận ngắn gọn rồi bổ sung lời khuyên nếu phù hợp.
+4. Khi đề xuất bài tập / thực đơn, trình bày dạng danh sách rõ ràng.
+5. Nhớ ngữ cảnh cuộc trò chuyện để trả lời liền mạch khi có câu hỏi liên tiếp.
+6. Dùng emoji vừa phải cho sinh động. Tối đa 5-6 câu cho gợi ý, 1-3 câu cho câu hỏi ngắn.
+7. Luôn cá nhân hóa dựa trên hồ sơ khách hàng ở trên.`;
 
-[QUY TẮC]:
-1. **CHỈ TRẢ LỜI ĐÚNG CÂU HỎI**: Khách hỏi nước thì CHỈ nói nước. Hỏi bài tập thì CHỈ nói bài tập. TUYỆT ĐỐI KHÔNG nhét thêm thông tin khác (VD: hỏi bài tập mà chen nước vào là SAI).
-2. Nếu [HỆ THỐNG VỪA THỰC HIỆN] có nội dung, xác nhận ngắn gọn CHỈ hành động đó.
-3. Nếu khách nhờ ĐỀ XUẤT bài tập, trình bày dạng DANH SÁCH ĐẸP:
-   1. Tên bài - sets x reps - kg
-   2. Tên bài - sets x reps - kg
-   Cuối cùng ghi: "Muốn thêm bài nào nhắn: thêm bài [tên] [số]sets [số]reps [số]kg"
-4. CẤM mở đầu bằng "Ok bạn", tên, hay từ phụ. Đi thẳng nội dung.
-5. Tối đa 4 câu khi gợi ý, 1-2 câu khi trả lời thông tin.
-`;
+        // Xây dựng messages array với lịch sử hội thoại
+        const history = getHistory(chatId);
+        const messages: { role: string; content: string }[] = [
+          { role: 'system', content: systemPrompt },
+          ...history.map(m => ({ role: m.role, content: m.content })),
+          { role: 'user', content: userMessage }
+        ];
+
+        if (!process.env.GROQ_API_KEY) {
+          bot.sendMessage(chatId, 'Hệ thống chưa được cấp quyền AI. Vui lòng kiểm tra lại cấu hình.');
+          return;
+        }
+
+        // Gửi cho Groq API (Llama 3.3 70B) với lịch sử hội thoại
+        const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages,
+            temperature: 0.7,
+            max_tokens: 1024
+          })
+        });
+
+        const result = await apiResponse.json();
+        if (result.error) throw new Error(result.error.message);
+        const responseText = result.choices[0].message.content;
+
+        // Lưu cả tin nhắn user và assistant vào bộ nhớ
+        addToHistory(chatId, 'user', userMessage);
+        addToHistory(chatId, 'assistant', responseText);
+
+        // Gửi trả lời lại cho người dùng
+        bot.sendMessage(chatId, responseText);
+
       } else {
-        finalPrompt = `Bạn là "TrendFit Master AI" - một Huấn luyện viên cá nhân & Chuyên gia dinh dưỡng cấp cao của ứng dụng TrendFit.
-Học viên vừa nhắn tin hỏi: "${userMessage}"
-Tuy nhiên, hệ thống ghi nhận họ CHƯA liên kết Telegram với tài khoản TrendFit. Hãy trả lời ngắn gọn, thân thiện và hướng dẫn họ lên Web để ấn nút Liên kết tài khoản trước nhé.`;
+        // Người dùng chưa liên kết tài khoản
+        const guestSystemPrompt = `Bạn là "TrendFit AI" — Huấn luyện viên cá nhân & Chuyên gia dinh dưỡng của ứng dụng TrendFit.
+Người dùng này CHƯA liên kết Telegram với tài khoản TrendFit.
+Hãy trả lời thân thiện, chuyên nghiệp. Nếu họ hỏi về fitness/dinh dưỡng thì vẫn trả lời nhưng nhắc nhẹ rằng nên liên kết tài khoản để được cá nhân hóa tốt hơn.
+Hướng dẫn: Vào web TrendFit → Cài đặt → Nhấn "Kết nối Telegram Bot".`;
+
+        const history = getHistory(chatId);
+        const messages: { role: string; content: string }[] = [
+          { role: 'system', content: guestSystemPrompt },
+          ...history.map(m => ({ role: m.role, content: m.content })),
+          { role: 'user', content: userMessage }
+        ];
+
+        if (!process.env.GROQ_API_KEY) {
+          bot.sendMessage(chatId, 'Hệ thống chưa được cấp quyền AI.');
+          return;
+        }
+
+        const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages,
+            temperature: 0.7,
+            max_tokens: 512
+          })
+        });
+
+        const result = await apiResponse.json();
+        if (result.error) throw new Error(result.error.message);
+        const responseText = result.choices[0].message.content;
+
+        addToHistory(chatId, 'user', userMessage);
+        addToHistory(chatId, 'assistant', responseText);
+
+        bot.sendMessage(chatId, responseText);
       }
-
-      if (!process.env.GROQ_API_KEY) {
-        bot.sendMessage(chatId, 'Hệ thống chưa được cấp quyền AI. Vui lòng kiểm tra lại cấu hình.');
-        return;
-      }
-
-      // 5. Gửi cho Groq API (Llama 3 70B)
-      const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: finalPrompt }]
-        })
-      });
-
-      const result = await apiResponse.json();
-      if (result.error) throw new Error(result.error.message);
-      const responseText = result.choices[0].message.content;
-
-      // 6. Gửi trả lời lại cho người dùng
-      bot.sendMessage(chatId, responseText);
 
     } catch (err: any) {
       console.error('❌ Lỗi AI Telegram:', err.message);
-      bot.sendMessage(chatId, 'Rất xin lỗi bạn, hiện tại não bộ AI của mình đang cần nghỉ ngơi một chút. Hãy thử lại sau nhé! 🧘‍♂️');
+      bot.sendMessage(chatId, 'Rất xin lỗi, hiện tại hệ thống AI đang bảo trì. Vui lòng thử lại sau ít phút nhé! 🔧');
     }
   });
 

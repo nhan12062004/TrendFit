@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 // Import client Supabase ta vừa tạo
 import { supabase } from './config/supabase';
 import { initTelegramBot } from './telegramBot';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 dotenv.config();
 
@@ -58,13 +59,12 @@ app.post('/api/generate-plan', async (req, res) => {
       return res.status(400).json({ error: 'Nội dung yêu cầu (prompt) không được để trống.' });
     }
 
-    if (!process.env.GROQ_API_KEY) {
-      return res.status(500).json({ error: 'Thiếu GROQ_API_KEY trong cấu hình server.' });
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'Thiếu GEMINI_API_KEY trong cấu hình server. Vui lòng kiểm tra file .env' });
     }
 
     let userContext = ``;
 
-    // Nếu frontend truyền userId lên, tiến hành lấy dữ liệu chi tiết của người dùng
     if (userId) {
       const [profile, bodyMetrics, lifestyle, health] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
@@ -103,22 +103,12 @@ Hãy dựa vào các thông tin cá nhân cực kỳ chi tiết trên để lậ
 
     const finalPrompt = userContext + "\nYêu cầu của người dùng: " + prompt;
 
-    // Thay thế Gemini bằng Groq (Llama 3 70B)
-    const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: finalPrompt }]
-      })
-    });
+    // Khởi tạo Google Generative AI (Gemini)
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" }); // Sử dụng bản Pro để suy luận lập kế hoạch tốt nhất
 
-    const result = await apiResponse.json();
-    if (result.error) throw new Error(result.error.message);
-    const text = result.choices[0].message.content;
+    const response = await model.generateContent(finalPrompt);
+    const text = response.response.text();
 
     res.json({ success: true, data: text });
   } catch (error: any) {

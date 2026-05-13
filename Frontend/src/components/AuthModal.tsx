@@ -7,7 +7,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -56,19 +56,34 @@ const [isLogin, setIsLogin] = useState(true);
             emailRedirectTo: window.location.origin, // Đảm bảo redirect về đúng domain hiện tại
           },
         });
-        
+
         if (error) throw error;
-        
+
+        // Bắt trường hợp Supabase trả về thành công giả (để chống dò email)
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          throw new Error("User already registered");
+        }
+
         if (data.session) {
           // Signup thành công và email confirmation đang tắt
           onClose();
         } else {
           // Thành công và đang đợi xác thực email
-          setIsEmailSent(true); 
+          setIsEmailSent(true);
         }
       }
     } catch (err: any) {
-      setError(err.message);
+      let errorMessage = err.message;
+      if (errorMessage === "Invalid login credentials") {
+        errorMessage = "Email hoặc mật khẩu không chính xác";
+      } else if (errorMessage === "User already registered") {
+        errorMessage = "Email này đã được đăng ký";
+      } else if (errorMessage.includes("Password should be at least")) {
+        errorMessage = "Mật khẩu phải có ít nhất 6 ký tự";
+      } else if (errorMessage === "Email not confirmed") {
+        errorMessage = "Vui lòng xác nhận email trước khi đăng nhập";
+      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -81,7 +96,7 @@ const [isLogin, setIsLogin] = useState(true);
     setFullName('');
     setError(null);
     setIsEmailSent(false);
-    setIsLogin(true); // Luôn trở lại màn hình đăng nhập
+    setIsLogin(true); 
   };
 
   const handleClose = () => {
@@ -100,19 +115,19 @@ const [isLogin, setIsLogin] = useState(true);
               <Mail className="w-12 h-12 text-black" strokeWidth={2.5} />
             </div>
           </div>
-          
-          <h2 className="text-3xl font-bold text-text-primary mb-4 tracking-tight">Check your email!</h2>
+
+          <h2 className="text-3xl font-bold text-text-primary mb-4 tracking-tight">Kiểm tra email của bạn!</h2>
           <p className="text-text-secondary mb-10 leading-relaxed">
-            We've sent a verification link to<br/>
-            <span className="text-[#a3e635] font-semibold">{email}</span>.
-            Check your inbox to activate your account.
+            Chúng tôi đã gửi một liên kết xác minh đến<br />
+            <span className="text-[#a3e635] font-semibold">{email}</span>.<br />
+            Vui lòng kiểm tra hộp thư đến để kích hoạt tài khoản.
           </p>
-          
-          <button 
+
+          <button
             onClick={resetFields}
             className="w-full bg-[#a3e635] text-black font-bold py-4 rounded-2xl hover:bg-[#bef264] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#a3e635]/10"
           >
-            Back to Login
+            Quay lại Đăng nhập
           </button>
         </div>
       </div>
@@ -122,14 +137,14 @@ const [isLogin, setIsLogin] = useState(true);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={handleClose}
       />
-      
+
       {/* Modal Content */}
       <div className="relative w-full max-w-md bg-bg-secondary border border-border-primary rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
-        <button 
+        <button
           onClick={handleClose}
           className="absolute top-4 right-4 text-text-tertiary hover:text-text-primary p-2 transition-colors"
         >
@@ -139,23 +154,18 @@ const [isLogin, setIsLogin] = useState(true);
         <div className="p-8">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-text-primary mb-2">
-              {isLogin ? 'Welcome Back' : 'Join TrendFit'}
+              {isLogin ? 'Chào mừng trở lại' : 'Tham gia TrendFit'}
             </h2>
             <p className="text-sm text-text-secondary">
-              {isLogin ? 'Log in to your account' : 'Create your fitness profile today'}
+              {isLogin ? 'Đăng nhập vào tài khoản của bạn' : 'Tạo hồ sơ thể hình của bạn ngay hôm nay'}
             </p>
           </div>
 
-          {error && (
-            <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-xl text-red-500 text-xs text-center">
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleAuth} className="space-y-4">
             {!isLogin && (
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-text-secondary ml-1">Full Name</label>
+                <label className="text-xs font-semibold text-text-secondary ml-1">Họ và tên</label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
                   <input
@@ -163,7 +173,7 @@ const [isLogin, setIsLogin] = useState(true);
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="John Doe"
+                    placeholder="Nguyễn Văn A"
                     className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 pl-11 pr-4 text-sm focus:border-[#a3e635] outline-none transition-colors"
                   />
                 </div>
@@ -171,7 +181,7 @@ const [isLogin, setIsLogin] = useState(true);
             )}
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-text-secondary ml-1">Email Address</label>
+              <label className="text-xs font-semibold text-text-secondary ml-1">Địa chỉ Email</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
                 <input
@@ -179,14 +189,14 @@ const [isLogin, setIsLogin] = useState(true);
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
+                  placeholder="email@vidu.com"
                   className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 pl-11 pr-4 text-sm focus:border-[#a3e635] outline-none transition-colors"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-text-secondary ml-1">Password</label>
+              <label className="text-xs font-semibold text-text-secondary ml-1">Mật khẩu</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
                 <input
@@ -206,7 +216,7 @@ const [isLogin, setIsLogin] = useState(true);
                 </button>
               </div>
             </div>
-            
+
             {!isLogin && (
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-text-secondary ml-1">{"Xác nhận mật khẩu"}</label>
@@ -231,6 +241,12 @@ const [isLogin, setIsLogin] = useState(true);
               </div>
             )}
 
+            {error && (
+              <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-xl text-red-500 text-xs text-center">
+                {error}
+              </div>
+            )}
+
             <button
               disabled={loading}
               className="w-full bg-[#a3e635] text-black font-bold py-3 rounded-xl hover:bg-[#bef264] transition-colors flex items-center justify-center gap-2 group"
@@ -239,7 +255,7 @@ const [isLogin, setIsLogin] = useState(true);
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  {isLogin ? 'Log In' : 'Sign Up'}
+                  {isLogin ? 'Đăng nhập' : 'Đăng ký'}
                 </>
               )}
             </button>

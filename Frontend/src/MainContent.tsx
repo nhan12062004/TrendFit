@@ -386,7 +386,7 @@ const [loading, setLoading] = useState(true);
       <div>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-text-primary">{"Khóa học nổi bật"}</h3>
-          <a href="#" className="text-sm font-medium text-[#a3e635] flex items-center gap-1 hover:underline">
+          <a href="#" className="text-sm font-medium text-[#a3e635] flex items-center gap-1">
             {"Xem tất cả"} < ArrowRight className="w-4 h-4" />
           </a>
         </div>
@@ -418,7 +418,7 @@ const [loading, setLoading] = useState(true);
       <div>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-text-primary">{"Dịch vụ"}</h3>
-          <a href="#" className="text-sm font-medium text-[#a3e635] flex items-center gap-1 hover:underline">
+          <a href="#" className="text-sm font-medium text-[#a3e635] flex items-center gap-1">
             {"Xem tất cả"} < ArrowRight className="w-4 h-4" />
           </a>
         </div>

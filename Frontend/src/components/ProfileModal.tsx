@@ -152,6 +152,9 @@ const [loading, setLoading] = useState(false);
     e.preventDefault();
     if (!user) return;
     setIsSubmitted(true);
+    if (!formData.full_name || !formData.phone || !formData.birthday || !formData.gender || !formData.height || formData.height === '0' || !formData.weight || formData.weight === '0' || !formData.target_weight || formData.target_weight === '0') {
+      return;
+    }
     setLoading(true);
 
     try {
@@ -323,6 +326,7 @@ const [loading, setLoading] = useState(false);
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Họ và tên"} <span className="text-red-500">*</span></label>
                   <input required name="full_name" value={formData.full_name} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.full_name ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent`} placeholder={"Nguyễn Văn A"} />
+                  {isSubmitted && !formData.full_name && <p className="text-red-500 text-[10px] mt-1 font-medium">Vui lòng nhập họ và tên</p>}
                 </div>
                 <div className="space-y-1.5 opacity-70">
                   <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Email (Tự điền)"} <span className="text-red-500">*</span></label>
@@ -331,12 +335,14 @@ const [loading, setLoading] = useState(false);
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Số điện thoại"} <span className="text-red-500">*</span></label>
                   <input required type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.phone ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent`} placeholder={"090 123 4567"} />
+                  {isSubmitted && !formData.phone && <p className="text-red-500 text-[10px] mt-1 font-medium">Vui lòng nhập số điện thoại</p>}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Ngày sinh"} <span className="text-red-500">*</span></label>
                   <input required type="date" name="birthday" value={formData.birthday} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.birthday ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635] text-white disabled:bg-bg-tertiary/20 disabled:border-transparent`} />
+                  {isSubmitted && !formData.birthday && <p className="text-red-500 text-[10px] mt-1 font-medium">Vui lòng chọn ngày sinh</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Giới tính"} <span className="text-red-500">*</span></label>
@@ -345,6 +351,7 @@ const [loading, setLoading] = useState(false);
                     <option value="Nữ">{"Nữ"}</option>
                     <option value="Khác">{"Khác"}</option>
                   </select>
+                  {isSubmitted && !formData.gender && <p className="text-red-500 text-[10px] mt-1 font-medium">Vui lòng chọn giới tính</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Công việc hiện tại"}</label>
@@ -361,15 +368,18 @@ const [loading, setLoading] = useState(false);
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Chiều cao (cm)"} <span className="text-red-500">*</span></label>
-                  <input required type="number" name="height" value={formData.height} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.height ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white`} placeholder="175" />
+                  <input required type="number" name="height" value={formData.height} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && (!formData.height || formData.height === '0') ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white`} placeholder="175" />
+                  {isSubmitted && (!formData.height || formData.height === '0') && <p className="text-red-500 text-[10px] mt-1 font-medium">Vui lòng nhập chiều cao</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Cân nặng (kg)"} <span className="text-red-500">*</span></label>
-                  <input required type="number" name="weight" value={formData.weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.weight ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white`} placeholder="70" />
+                  <input required type="number" name="weight" value={formData.weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && (!formData.weight || formData.weight === '0') ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white`} placeholder="70" />
+                  {isSubmitted && (!formData.weight || formData.weight === '0') && <p className="text-red-500 text-[10px] mt-1 font-medium">Vui lòng nhập cân nặng</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Cân nặng đích (kg)"} <span className="text-red-500">*</span></label>
-                  <input required type="number" name="target_weight" value={formData.target_weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.target_weight ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white`} placeholder="65" />
+                  <input required type="number" name="target_weight" value={formData.target_weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && (!formData.target_weight || formData.target_weight === '0') ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400 text-white`} placeholder="65" />
+                  {isSubmitted && (!formData.target_weight || formData.target_weight === '0') && <p className="text-red-500 text-[10px] mt-1 font-medium">Vui lòng nhập cân nặng đích</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"% Mỡ cơ thể (nếu biết)"}</label>

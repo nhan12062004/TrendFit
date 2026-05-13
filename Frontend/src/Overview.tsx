@@ -285,7 +285,7 @@ const navigate = useNavigate();
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm font-bold text-text-primary"><AnimatedNumber value={sleepHours.actual} />{sleepHours.target}</span>
+              <span className="text-sm font-bold text-text-primary"><AnimatedNumber value={sleepHours.actual} />/{sleepHours.target}</span>
             </div>
           </div>
           <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-widest">{"Giờ giấc"}</span>
