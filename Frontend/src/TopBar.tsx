@@ -13,6 +13,49 @@ function normalizeViet(str: string): string {
     .toLowerCase();
 }
 
+const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+const getDatePartsInTimeZone = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value || '1970';
+  const month = parts.find((p) => p.type === 'month')?.value || '01';
+  const day = parts.find((p) => p.type === 'day')?.value || '01';
+  return { year, month, day };
+};
+
+const getVietnamDateKey = (date = new Date()): string => {
+  const { year, month, day } = getDatePartsInTimeZone(date, VIETNAM_TIMEZONE);
+  return `${year}-${month}-${day}`;
+};
+
+const addDaysToDateKey = (dateKey: string, days: number): string => {
+  const d = new Date(`${dateKey}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return getVietnamDateKey(d);
+};
+
+const calculateWorkoutStreak = (completedDateKeys: string[], todayKey: string): number => {
+  const completedSet = new Set(completedDateKeys);
+  let streak = 0;
+  let cursor = todayKey;
+
+  if (!completedSet.has(cursor)) {
+    cursor = addDaysToDateKey(cursor, -1);
+  }
+
+  while (completedSet.has(cursor)) {
+    streak += 1;
+    cursor = addDaysToDateKey(cursor, -1);
+  }
+
+  return streak;
+};
+
 interface SearchResult {
   id: string;
   title: string;
@@ -75,6 +118,7 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [streakDays, setStreakDays] = useState(0);
 
   useEffect(() => {
     if (isLightMode) {
@@ -83,6 +127,33 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
       document.documentElement.classList.remove('light');
     }
   }, [isLightMode]);
+
+  useEffect(() => {
+    const fetchStreak = async () => {
+      if (!isLoggedIn || !user) {
+        setStreakDays(0);
+        return;
+      }
+      const today = getVietnamDateKey();
+      const { data: completedDays } = await supabase
+        .from('daily_exercise_sessions')
+        .select('log_date')
+        .eq('user_id', user.id)
+        .eq('is_completed', true)
+        .order('log_date', { ascending: false })
+        .limit(180);
+
+      if (completedDays) {
+        const completedDateKeys = Array.from(
+          new Set(completedDays.map((row: any) => String(row.log_date || '')).filter(Boolean))
+        );
+        setStreakDays(calculateWorkoutStreak(completedDateKeys, today));
+      } else {
+        setStreakDays(0);
+      }
+    };
+    fetchStreak();
+  }, [isLoggedIn, user]);
 
 
   useEffect(() => {
@@ -347,9 +418,14 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
 
 
         {isLoggedIn ? (
-          <div className="flex items-center gap-3 cursor-pointer" onClick={onProfileClick}>
-            <span className="text-sm font-medium text-text-primary hidden md:block">{userName}</span>
-            <div className="w-8 h-8 rounded-full bg-[#a3e635] flex items-center justify-center text-black font-bold text-sm shadow-lg shadow-[#a3e635]/10">
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={onProfileClick}>
+            <div className="hidden md:flex flex-col items-end">
+              <span className="text-sm font-semibold text-text-primary group-hover:text-[#a3e635] transition-colors leading-tight">{userName}</span>
+              <span className="text-[10px] text-text-tertiary flex items-center gap-1 font-medium mt-0.5">
+                <Flame className="w-3 h-3 text-[#ff5e00]" /> {streakDays} ngày liên tiếp
+              </span>
+            </div>
+            <div className="w-9 h-9 rounded-full bg-[#a3e635] flex items-center justify-center text-black font-bold text-sm shadow-lg shadow-[#a3e635]/20 group-hover:scale-105 transition-transform">
               {userInitial}
             </div>
           </div>

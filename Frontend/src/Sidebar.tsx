@@ -55,9 +55,8 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
   const { isLoggedIn, signOut, user, openAuthModal, isAdmin, profile, refreshProfile, refreshTick } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
-const [waterIntake, setWaterIntake] = useState(0);
+  const [waterIntake, setWaterIntake] = useState(0);
   const [waterGoal, setWaterGoal] = useState(2.5);
-  const [streakDays, setStreakDays] = useState(0);
 
   const fetchWater = async () => {
     if (!user) return;
@@ -75,31 +74,13 @@ const [waterIntake, setWaterIntake] = useState(0);
       .eq('user_id', user.id)
       .maybeSingle();
 
-    const { data: completedDays } = await supabase
-      .from('daily_exercise_sessions')
-      .select('log_date')
-      .eq('user_id', user.id)
-      .eq('is_completed', true)
-      .order('log_date', { ascending: false })
-      .limit(180);
-
     if (log) setWaterIntake((log.water_intake_ml || 0) / 1000);
     if (lifestyle) setWaterGoal(lifestyle.daily_water_goal || 2.5);
-    if (completedDays) {
-      const completedDateKeys = Array.from(
-        new Set(completedDays.map((row: any) => String(row.log_date || '')).filter(Boolean))
-      );
-      setStreakDays(calculateWorkoutStreak(completedDateKeys, today));
-    } else {
-      setStreakDays(0);
-    }
   };
 
   useEffect(() => {
     if (isLoggedIn) {
       fetchWater();
-    } else {
-      setStreakDays(0);
     }
   }, [isLoggedIn, user, refreshTick]);
 
@@ -308,28 +289,17 @@ const [waterIntake, setWaterIntake] = useState(0);
               </>
             )}
 
-            <div className="flex items-center gap-3">
-              <div 
-                className="flex items-center gap-3 px-2 cursor-pointer hover:bg-bg-tertiary rounded-xl p-1 transition-colors overflow-hidden"
-                onClick={onProfileClick}
-              >
-                <div className="w-10 h-10 rounded-full bg-[#a3e635] flex items-center justify-center text-black font-bold shrink-0 shadow-lg shadow-[#a3e635]/10">
-                  {userInitial}
-                </div>
-                <div className="overflow-hidden">
-                  <p className="text-sm font-semibold text-text-primary truncate">{userName}</p>
-                  <p className="text-xs text-text-tertiary flex items-center gap-1">
-                    <Flame className="w-3 h-3 text-[#ff5e00]" /> {streakDays} {"ngày liên tiếp"}
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                className={`p-2 rounded-lg ml-auto transition-colors ${isSettingsOpen ? 'bg-[#a3e635] text-black' : 'text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary'}`}
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-            </div>
+            <button 
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                isSettingsOpen 
+                  ? 'bg-[#a3e635] text-black font-semibold' 
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'
+              }`}
+            >
+              <Settings className="w-5 h-5" />
+              <span className="text-sm font-medium">{"Cài đặt"}</span>
+            </button>
           </div>
         ) : (
           <button 
