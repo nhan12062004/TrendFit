@@ -1087,7 +1087,6 @@ const workoutCreatorLabel = WORKOUT_CREATOR_LABEL_VI;
         }
       }
 
-      // 5) Refresh day summary and items from DB right after save
       const { data: savedItems, error: refreshError } = await supabase
         .from('weekly_plan_exercises')
         .select(`

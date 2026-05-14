@@ -1,4 +1,4 @@
-import { Search, Moon, Sun, Bell, Menu, LogIn, Dumbbell, Utensils, Home, Timer, Blocks, Brain, ChevronRight, X, Loader2, Flame } from 'lucide-react';
+import { Search, Moon, Sun, Bell, Menu, LogIn, Dumbbell, Utensils, Home, Timer, Blocks, Brain, ChevronRight, X, Loader2, Flame, Sparkles, TrendingUp } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -64,15 +64,15 @@ interface SearchResult {
   href: string;
 }
 
-type PageIcon = 'home' | 'brain' | 'dumbbell' | 'utensils' | 'timer' | 'blocks';
+type PageIcon = 'home' | 'brain' | 'dumbbell' | 'utensils' | 'timer' | 'blocks' | 'sparkles' | 'trendingUp';
 
-const STATIC_PAGES: (SearchResult & { pageIcon: PageIcon; badge?: string })[] = [
+const STATIC_PAGES: (SearchResult & { pageIcon: PageIcon; badge?: string; badgeColor?: string })[] = [
   { id: 'overview',        title: 'Tổng quan',          subtitle: 'Trang chủ & thống kê',   type: 'page', href: '/overview',        pageIcon: 'home' },
-  { id: 'smart-planner',  title: 'Lập kế hoạch AI',    subtitle: 'AI tự động lên lịch',    type: 'page', href: '/smart-planner',  pageIcon: 'brain',    badge: 'Mới' },
+  { id: 'smart-planner',  title: 'AI Coach',    subtitle: 'AI tự động lên lịch',    type: 'page', href: '/smart-planner',  pageIcon: 'sparkles',    badge: 'AI', badgeColor: 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]' },
   { id: 'exercises',      title: 'Bài tập',             subtitle: 'Lịch tập hôm nay',       type: 'page', href: '/exercises',       pageIcon: 'dumbbell' },
   { id: 'diet-plan',      title: 'Chế độ ăn',           subtitle: 'Thực đơn & calo',        type: 'page', href: '/diet-plan',       pageIcon: 'utensils' },
   { id: 'workout-timer',  title: 'Đồng hồ bấm giờ',    subtitle: 'Timer & đếm ngược',      type: 'page', href: '/workout-timer',   pageIcon: 'timer' },
-  { id: 'workout-builder',title: 'Tạo bài tập',         subtitle: 'Tạo kế hoạch tuần',     type: 'page', href: '/workout-builder',  pageIcon: 'blocks' },
+  { id: 'progress',       title: 'Tiến độ',             subtitle: 'Theo dõi sự thay đổi',    type: 'page', href: '/progress',        pageIcon: 'trendingUp' },
 ];
 
 const PAGE_ICON_MAP: Record<PageIcon, { Icon: React.ElementType; bg: string; color: string }> = {
@@ -82,6 +82,8 @@ const PAGE_ICON_MAP: Record<PageIcon, { Icon: React.ElementType; bg: string; col
   utensils:  { Icon: Utensils, bg: 'bg-blue-500/10',  color: 'text-blue-400' },
   timer:     { Icon: Timer,    bg: 'bg-purple-500/10', color: 'text-purple-400' },
   blocks:    { Icon: Blocks,   bg: 'bg-pink-500/10',   color: 'text-pink-400' },
+  sparkles:  { Icon: Sparkles, bg: 'bg-purple-500/10',  color: 'text-purple-400' },
+  trendingUp: { Icon: TrendingUp, bg: 'bg-emerald-500/10', color: 'text-emerald-400' },
 };
 
 function ResultIcon({ type, pageIcon }: { type: string; pageIcon?: PageIcon }) {
@@ -375,7 +377,7 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {item.badge && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-black bg-orange-500 text-white">{item.badge}</span>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${item.badgeColor || 'bg-orange-500 text-white'}`}>{item.badge}</span>
                         )}
                         <ChevronRight className="w-4 h-4 text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>

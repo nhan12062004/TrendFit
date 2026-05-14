@@ -1,0 +1,20 @@
+{
+  "name": "dataset_scripts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
+    "google-translate-api-x": "^10.7.2",
+    "groq-sdk": "^1.2.0",
+    "p-limit": "^7.3.0",
+    "pg": "^8.20.0"
+  }
+}

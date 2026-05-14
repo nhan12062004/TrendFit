@@ -1,4 +1,4 @@
-import { Home, Utensils, Timer, Settings, Dumbbell, Droplet, Flame, Shield, X, Blocks, Brain, LogIn, LogOut, User, Send, CheckCircle2, Trash2, Loader2, GlassWater } from 'lucide-react';
+import { Home, Utensils, Timer, Settings, Dumbbell, Droplet, Flame, Shield, X, Blocks, Brain, LogIn, LogOut, User, Send, CheckCircle2, Trash2, Loader2, GlassWater, Sparkles, TrendingUp } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { useState, useEffect } from 'react';
@@ -86,11 +86,11 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
 
   const menuItems = [
     { icon: Home, label: "Tổng quan", path: '/overview' },
-    { icon: Brain, label: "Lập kế hoạch AI", path: '/smart-planner', badge: "Mới", badgeColor: 'bg-orange-500 text-white' },
+    { icon: Sparkles, label: "AI Coach", path: '/smart-planner', badge: "AI", badgeColor: 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]' },
     { icon: Dumbbell, label: "Bài tập", path: '/exercises' },
     { icon: Utensils, label: "Chế độ ăn", path: '/diet-plan' },
     { icon: Timer, label: "Đồng hồ bấm giờ", path: '/workout-timer' },
-    { icon: Blocks, label: "Tạo bài tập", path: '/workout-builder' },
+    { icon: TrendingUp, label: "Tiến độ", path: '/progress' },
     { icon: Shield, label: "Quản trị viên", path: '/admin-panel', adminOnly: true },
   ];
 
@@ -150,10 +150,10 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
             to={item.path}
             onClick={onClose}
             className={({ isActive }) =>
-              `flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${
+              `flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 ${
                 isActive
-                  ? 'bg-[#a3e635] text-black font-semibold'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-border-primary'
+                  ? 'bg-gradient-to-r from-[#a3e635]/20 to-[#a3e635]/5 text-[#a3e635] font-semibold shadow-[inset_0_0_20px_rgba(163,230,53,0.05)]'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'
               }`
             }
           >
@@ -291,9 +291,9 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
 
             <button 
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                 isSettingsOpen 
-                  ? 'bg-[#a3e635] text-black font-semibold' 
+                  ? 'bg-gradient-to-r from-[#a3e635]/20 to-[#a3e635]/5 text-[#a3e635] font-semibold shadow-[inset_0_0_20px_rgba(163,230,53,0.05)]' 
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'
               }`}
             >
