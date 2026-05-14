@@ -50,3 +50,7 @@ metadata.json
 # Testing
 coverage/
 .nyc_output
+
+# Datasets
+dataset_scripts/
+exercises-dataset/
