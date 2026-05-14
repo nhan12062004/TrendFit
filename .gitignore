@@ -54,3 +54,6 @@ coverage/
 # Datasets
 dataset_scripts/
 exercises-dataset/
+
+# Supabase
+supabase/
