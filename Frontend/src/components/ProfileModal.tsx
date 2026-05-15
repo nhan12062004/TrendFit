@@ -637,7 +637,7 @@ const [loading, setLoading] = useState(false);
         {/* Footer */}
         <div className="p-4 md:p-5 border-t border-border-primary bg-bg-tertiary/50 backdrop-blur-xl flex justify-between items-center">
           <div className="hidden sm:block">
-            <span className="text-[9px] font-bold text-text-tertiary uppercase tracking-[2px]">TrendFit Precision Profile</span>
+            <span className="text-[9px] font-bold text-text-tertiary uppercase tracking-[2px]">TrendFit AI Precision Profile</span>
           </div>
           {isEditing ? (
             <div className="flex gap-3 w-full sm:w-auto">

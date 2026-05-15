@@ -129,11 +129,11 @@ export default function Sidebar({ onClose, onProfileClick, onPasswordClick }: {
       <div className="p-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10">
-            <img src="/logo.svg" alt="TrendFit Logo" className="w-full h-full object-contain" />
+            <img src="/logo.svg" alt="TrendFit AI Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-text-primary leading-tight">TrendFit</h1>
-            <p className="text-[10px] text-[#a3e635] font-semibold tracking-widest uppercase">{"Thành viên Fitness"}</p>
+            <h1 className="text-xl font-bold text-text-primary leading-tight">TrendFit AI</h1>
+            <p className="text-[10px] text-[#a3e635] font-semibold tracking-widest uppercase">{"Ai Fitness Coach"}</p>
           </div>
         </div>
         {onClose && (

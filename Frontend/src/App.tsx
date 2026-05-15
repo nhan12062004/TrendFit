@@ -8,6 +8,7 @@ import WorkoutBuilder from './WorkoutBuilder';
 import DietPlan from './DietPlan';
 import Exercises from './Exercises';
 import WorkoutTimer from './WorkoutTimer';
+import CourseDetails from './CourseDetails';
 
 const PlaceholderPage = lazy(() => import('./PlaceholderPage'));
 
@@ -21,6 +22,7 @@ export default function App() {
               <Route path="/" element={<Dashboard />}>
                 <Route index element={<Navigate to="/overview" replace />} />
                 <Route path="overview" element={<Overview />} />
+                <Route path="course/:id" element={<CourseDetails />} />
                 <Route path="smart-planner" element={<PlaceholderPage title="Lập kế hoạch AI" />} />
                 <Route path="exercises" element={<Exercises />} />
                 <Route path="diet-plan" element={<DietPlan />} />

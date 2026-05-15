@@ -355,13 +355,14 @@ const [loading, setLoading] = useState(true);
 
         // 3. Build weekly schedule for "Lịch tập tuần này"
         const dayLabels = ['T2','T3','T4','T5','T6','T7','CN'];
+        const hasWeeklyPlan = (weeklySessions || []).length > 0;
         const schedule = weekKeys.map((dateKey, idx) => {
           const sessionsForDay = (weeklySessions || []).filter((s: any) => String(s.log_date || '') === dateKey);
           const sessionCount = sessionsForDay.length;
           const completedCount = sessionsForDay.filter((s: any) => !!s.is_completed).length;
           const durationMin = sessionCount * 8;
           // Determine workout type from body_part or exercise name
-          let workoutType = 'Nghỉ ngơi';
+          let workoutType = hasWeeklyPlan ? 'Nghỉ ngơi' : 'Không có bài tập';
           let isRest = sessionCount === 0;
           if (sessionCount > 0) {
             const bodyParts = sessionsForDay.map((s: any) => (s.exercises as any)?.body_part || '').filter(Boolean);
@@ -669,10 +670,12 @@ const [loading, setLoading] = useState(true);
                   : 'bg-bg-tertiary/30 border-border-primary/30 hover:border-border-primary/60'
               }`}
             >
-              <span className={`text-[10px] md:text-xs font-bold ${
-                day.isToday ? 'text-[#a3e635]' : 'text-text-primary'
-              }`}>{day.day}</span>
-              <span className="text-[8px] md:text-[9px] text-text-tertiary">{day.date}</span>
+              <div className="flex flex-col items-center gap-0">
+                <span className={`text-[10px] md:text-xs font-bold ${
+                  day.isToday ? 'text-[#a3e635]' : 'text-text-primary'
+                }`}>{day.day}</span>
+                <span className="text-[8px] md:text-[9px] text-text-tertiary">{day.date}</span>
+              </div>
               
               {day.isRest ? (
                 <div className="w-7 h-7 md:w-9 md:h-9 rounded-full bg-bg-tertiary/50 flex items-center justify-center my-0.5 md:my-1">

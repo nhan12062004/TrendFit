@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import MainContent from './MainContent';
 import LoadingScreen from './components/LoadingScreen';
 import { useAuth } from './contexts/AuthContext';
-import { Moon, Droplet, Dumbbell, Utensils, Timer, Scale, Ruler, Clock, Brain, Blocks, Weight, User, ChevronRight, Zap, Flame, Check, Activity, TrendingDown, TrendingUp, ArrowRight } from 'lucide-react';
+import { Moon, Droplet, Dumbbell, Utensils, Timer, Scale, Ruler, Clock, Brain, Blocks, Weight, User, ChevronRight, ChevronDown, Zap, Flame, Check, Activity, TrendingDown, TrendingUp, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedNumber from './components/AnimatedNumber';
 import { supabase } from './lib/supabase';
@@ -92,6 +92,9 @@ const navigate = useNavigate();
   const [streakDays, setStreakDays] = useState(0);
   const [completedDayKeys, setCompletedDayKeys] = useState<Set<string>>(new Set());
   const [last7DaysWeight, setLast7DaysWeight] = useState<{day: string, value: number}[]>([]);
+  const [last7DaysKcal, setLast7DaysKcal] = useState<{day: string, value: number}[]>([]);
+  const [chartMetric, setChartMetric] = useState<'weight' | 'kcal'>('weight');
+  const [isChartMetricDropdownOpen, setIsChartMetricDropdownOpen] = useState(false);
 
   useEffect(() => {
     async function fetchMetrics() {
@@ -254,6 +257,25 @@ const navigate = useNavigate();
           return { day: dayLabels[idx], value: lastKnown };
         });
         setLast7DaysWeight(weightData);
+
+        // Fetch last 7 days calories
+        const { data: kcalLogs } = await supabase
+          .from('daily_progress_logs')
+          .select('calories_burned, log_date')
+          .eq('user_id', user.id)
+          .gte('log_date', weekMondayKey)
+          .lte('log_date', getVietnamDateKey(todayDateObj))
+          .order('log_date', { ascending: true });
+
+        const kcalByDay: Record<string, number> = {};
+        (kcalLogs || []).forEach((log: any) => {
+          kcalByDay[log.log_date] = Number(log.calories_burned || 0);
+        });
+        const kcalData = weekKeys.map((k, idx) => ({
+          day: dayLabels[idx],
+          value: kcalByDay[k] || 0
+        }));
+        setLast7DaysKcal(kcalData);
 
         let age = 0;
         if (profile?.birthday) {
@@ -495,27 +517,58 @@ const navigate = useNavigate();
               <Activity className="w-4 h-4 text-[#a3e635]" />
               <h3 className="text-sm font-bold text-text-primary">Tiến độ 7 ngày</h3>
             </div>
-            <span className="text-[10px] text-text-tertiary bg-bg-tertiary/50 px-2.5 py-1 rounded-lg border border-border-primary/30">Cân nặng</span>
+            <div className="relative">
+              <button 
+                onClick={() => setIsChartMetricDropdownOpen(!isChartMetricDropdownOpen)}
+                className="flex items-center gap-1 bg-[#a3e635] text-black text-[10px] px-2.5 py-1.5 rounded-lg font-bold transition-transform active:scale-95"
+              >
+                {chartMetric === 'weight' ? 'Cân nặng' : 'Calo'}
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+              {isChartMetricDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 bg-bg-secondary border border-border-primary rounded-xl shadow-lg overflow-hidden z-20 w-28 py-1">
+                  <button 
+                    onClick={() => { setChartMetric('weight'); setIsChartMetricDropdownOpen(false); }}
+                    className={`w-full text-left px-3 py-2 text-xs font-bold hover:bg-bg-tertiary transition-colors ${chartMetric === 'weight' ? 'text-[#a3e635]' : 'text-text-primary'}`}
+                  >
+                    Cân nặng
+                  </button>
+                  <button 
+                    onClick={() => { setChartMetric('kcal'); setIsChartMetricDropdownOpen(false); }}
+                    className={`w-full text-left px-3 py-2 text-xs font-bold hover:bg-bg-tertiary transition-colors ${chartMetric === 'kcal' ? 'text-[#a3e635]' : 'text-text-primary'}`}
+                  >
+                    Calo
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           
           {(() => {
-            const currentWeight = last7DaysWeight[last7DaysWeight.length - 1]?.value || 0;
-            const firstWeight = last7DaysWeight[0]?.value || 0;
-            const diff = currentWeight - firstWeight;
+            const chartData = chartMetric === 'weight' ? last7DaysWeight : last7DaysKcal;
+            if (chartData.length === 0) return null;
+            const currentVal = chartData[chartData.length - 1]?.value || 0;
+            const firstVal = chartData[0]?.value || 0;
+            const diff = currentVal - firstVal;
             const diffSign = diff > 0 ? '+' : '';
-            const isDown = diff < 0;
+            const isGood = chartMetric === 'weight' ? diff < 0 : diff > 0;
+            
+            const displayVal = chartMetric === 'weight' 
+              ? currentVal 
+              : chartData.reduce((sum, item) => sum + item.value, 0);
+            
             return (
               <div className="flex items-end gap-2 mb-4">
                 <span className="text-2xl font-extrabold text-text-primary leading-none">
-                  {parseFloat(currentWeight.toFixed(1))}
+                  {chartMetric === 'weight' ? parseFloat(displayVal.toFixed(1)) : Math.round(displayVal).toLocaleString()}
                 </span>
-                <span className="text-xs text-text-tertiary font-medium mb-0.5">kg</span>
+                <span className="text-xs text-text-tertiary font-medium mb-0.5">{chartMetric === 'weight' ? 'kg' : 'kcal'}</span>
                 {diff !== 0 && (
                   <div className={`flex items-center gap-1 mb-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    isDown ? 'bg-[#a3e635]/10 text-[#a3e635]' : 'bg-orange-500/10 text-orange-400'
+                    isGood ? 'bg-[#a3e635]/10 text-[#a3e635]' : 'bg-orange-500/10 text-orange-400'
                   }`}>
-                    {isDown ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
-                    {diffSign}{Math.abs(diff).toFixed(1)} kg
+                    {diff < 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
+                    {diffSign}{chartMetric === 'weight' ? Math.abs(diff).toFixed(1) : Math.round(Math.abs(diff)).toLocaleString()} {chartMetric === 'weight' ? 'kg' : 'kcal'}
                   </div>
                 )}
               </div>
@@ -524,20 +577,47 @@ const navigate = useNavigate();
 
           <div className="relative h-44">
             {(() => {
-              const values = last7DaysWeight.map(w => w.value).filter(v => v > 0);
-              if (values.length === 0) return null;
-              const dataMin = Math.min(...values);
-              const dataMax = Math.max(...values);
+              const chartData = chartMetric === 'weight' ? last7DaysWeight : last7DaysKcal;
+              const values = chartData.map(w => w.value);
+              const activeValues = values.filter(v => v > 0);
+              if (activeValues.length === 0 && chartMetric === 'weight') return null;
+              
+              const displayVal = chartMetric === 'weight' 
+                ? (chartData[chartData.length - 1]?.value || 0)
+                : chartData.reduce((sum, item) => sum + item.value, 0);
+              
+              const dataMin = Math.min(...activeValues, 0);
+              const dataMax = Math.max(...activeValues, 100);
               const dataRange = dataMax - dataMin;
-              const halfRange = Math.max(2, dataRange * 0.5 + 1);
-              const center = (dataMin + dataMax) / 2;
-              const minVal = center - halfRange;
-              const maxVal = center + halfRange;
-              const range = maxVal - minVal;
+              
+              // For calories, we might want a different scale
+              let minVal: number, maxVal: number;
+              if (chartMetric === 'weight') {
+                const latest = activeValues[activeValues.length - 1] || 70;
+                const base = Math.round(latest);
+                minVal = base - 2;
+                maxVal = base + 2;
+                
+                // Ensure all points fit and keep integer boundaries
+                activeValues.forEach(v => {
+                  if (v < minVal) minVal = Math.floor(v) - 1;
+                  if (v > maxVal) maxVal = Math.ceil(v) + 1;
+                });
 
+                // Ensure the range is a multiple of 4 so gridCount=4 gives integer steps
+                let diff = maxVal - minVal;
+                if (diff % 4 !== 0) {
+                  maxVal += (4 - (diff % 4));
+                }
+              } else {
+                minVal = 0;
+                maxVal = Math.max(500, dataMax * 1.2);
+              }
+              const range = maxVal - minVal || 1;
+              
               const svgW = 280;
               const svgH = 140;
-              const labelW = 20;
+              const labelW = 24;
               const padTop = 10;
               const padBot = 24;
               const padLeft = labelW + 6;
@@ -545,8 +625,8 @@ const navigate = useNavigate();
               const usableW = svgW - padLeft - padRight;
               const usableH = svgH - padTop - padBot;
 
-              const points = last7DaysWeight.map((w, idx) => {
-                const x = padLeft + (last7DaysWeight.length > 1 ? (idx / (last7DaysWeight.length - 1)) * usableW : usableW / 2);
+              const points = chartData.map((w, idx) => {
+                const x = padLeft + (chartData.length > 1 ? (idx / (chartData.length - 1)) * usableW : usableW / 2);
                 const y = padTop + usableH - ((w.value - minVal) / range) * usableH;
                 return { x, y, val: w.value };
               });
@@ -567,14 +647,19 @@ const navigate = useNavigate();
               const gridLines = Array.from({ length: gridCount + 1 }, (_, i) => {
                 const val = minVal + step * i;
                 const y = padTop + usableH - ((val - minVal) / range) * usableH;
-                const label = range <= 4 ? parseFloat(val.toFixed(1)).toString() : Math.round(val).toString();
+                let label = '';
+                if (chartMetric === 'weight') {
+                   label = Math.round(val).toString();
+                } else {
+                   label = val >= 1000 ? (val/1000).toFixed(1) + 'k' : Math.round(val).toString();
+                }
                 return { y, label };
               });
 
               return (
                 <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-full" preserveAspectRatio="none">
                   <defs>
-                    <linearGradient id="weightGradRight" x1="0" x2="0" y1="0" y2="1">
+                    <linearGradient id="chartGradRight" x1="0" x2="0" y1="0" y2="1">
                       <stop offset="0%" stopColor="#a3e635" stopOpacity="0.15" />
                       <stop offset="100%" stopColor="#a3e635" stopOpacity="0.02" />
                     </linearGradient>
@@ -583,11 +668,11 @@ const navigate = useNavigate();
                   {gridLines.map((g, i) => (
                     <g key={i}>
                       <line x1={padLeft} x2={svgW - padRight} y1={g.y} y2={g.y} stroke="var(--border-primary)" strokeWidth="0.3" strokeDasharray="2,2" opacity="0.3" />
-                      <text x={labelW} y={g.y} textAnchor="end" dominantBaseline="middle" fontSize="7" fill="var(--text-tertiary)" fontFamily="inherit">{g.label}</text>
+                      <text x={labelW - 4} y={g.y} textAnchor="end" dominantBaseline="middle" fontSize="9" fill="var(--text-tertiary)" fontFamily="inherit">{g.label}</text>
                     </g>
                   ))}
                   {/* Fill */}
-                  <path d={fillD} fill="url(#weightGradRight)" />
+                  <path d={fillD} fill="url(#chartGradRight)" />
                   {/* Line */}
                   <path d={pathD} fill="none" stroke="#a3e635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                     style={{ filter: 'drop-shadow(0 0 3px rgba(163,230,53,0.3))' }} />
@@ -597,25 +682,27 @@ const navigate = useNavigate();
                     const isToday = i === (currentDow === 0 ? 6 : currentDow - 1);
                     return (
                       <g key={i}>
-                        <circle cx={p.x} cy={p.y} r="3" fill="#a3e635" />
-                        <circle cx={p.x} cy={p.y} r="1.5" fill="var(--bg-secondary)" />
+                        <circle cx={p.x} cy={p.y} r="2.5" fill="#a3e635" />
+                        <circle cx={p.x} cy={p.y} r="1" fill="var(--bg-secondary)" />
                         {isToday && (
                           <>
-                            <circle cx={p.x} cy={p.y} r="5.5" fill="#a3e635" opacity="0.15" />
-                            <circle cx={p.x} cy={p.y} r="4" fill="#a3e635" />
-                            <circle cx={p.x} cy={p.y} r="2" fill="var(--bg-secondary)" />
-                            <rect x={p.x - 12} y={p.y - 13} width="24" height="9" rx="2.5" fill="#a3e635" />
-                            <text x={p.x} y={p.y - 6.5} textAnchor="middle" fontSize="6.5" fontWeight="bold" fill="#000">{parseFloat(p.val.toFixed(1))}</text>
+                            <circle cx={p.x} cy={p.y} r="5" fill="#a3e635" opacity="0.15" />
+                            <circle cx={p.x} cy={p.y} r="3.5" fill="#a3e635" />
+                            <circle cx={p.x} cy={p.y} r="1.5" fill="var(--bg-secondary)" />
+                            <rect x={p.x - 16} y={p.y - 16} width="32" height="12" rx="3" fill="#a3e635" />
+                            <text x={p.x} y={p.y - 7.5} textAnchor="middle" fontSize="8" fontWeight="bold" fill="#000">
+                              {chartMetric === 'weight' ? parseFloat(p.val.toFixed(1)) : Math.round(displayVal)}
+                            </text>
                           </>
                         )}
                       </g>
                     );
                   })}
                   {/* X-axis labels */}
-                  {last7DaysWeight.map((w, i) => {
-                    const x = padLeft + (last7DaysWeight.length > 1 ? (i / (last7DaysWeight.length - 1)) * usableW : usableW / 2);
+                  {chartData.map((w, i) => {
+                    const x = padLeft + (chartData.length > 1 ? (i / (chartData.length - 1)) * usableW : usableW / 2);
                     return (
-                      <text key={i} x={x} y={svgH - 5} textAnchor="middle" fontSize="7" fill="var(--text-tertiary)" fontFamily="inherit">{w.day}</text>
+                      <text key={i} x={x} y={svgH - 9} textAnchor="middle" fontSize="9" fill="var(--text-tertiary)" fontFamily="inherit">{w.day}</text>
                     );
                   })}
                 </svg>
@@ -632,6 +719,7 @@ const navigate = useNavigate();
 export default function Overview() {
   const { refreshTick } = useAuth();
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);
@@ -661,12 +749,12 @@ export default function Overview() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {[
-            { title: "Nâng tạ", level: "Nâng cao", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/weight-lifting.jpg' },
-            { title: "Phát triển cơ bắp", level: "Trung cấp", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/muscle-training.jpg' },
-            { title: "CrossFit", level: "Mọi cấp độ", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/cross-fit.jpg' },
-            { title: "Cardio Đốt Mỡ", level: "Dễ", img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop' }
+            { id: "nang-ta", title: "Nâng tạ", level: "Nâng cao", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/weight-lifting.jpg' },
+            { id: "phat-trien-co-bap", title: "Phát triển cơ bắp", level: "Trung cấp", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/muscle-training.jpg' },
+            { id: "crossfit", title: "CrossFit", level: "Mọi cấp độ", img: 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/course/cross-fit.jpg' },
+            { id: "cardio-dot-mo", title: "Cardio Đốt Mỡ", level: "Dễ", img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop' }
           ].map((course, i) => (
-            <div key={i} className="group relative rounded-xl overflow-hidden h-48 cursor-pointer">
+            <div key={i} onClick={() => navigate(`/course/${course.id}`)} className="group relative rounded-xl overflow-hidden h-48 cursor-pointer">
               <img src={course.img} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
               <div className="absolute inset-0 p-4 flex flex-col justify-between">

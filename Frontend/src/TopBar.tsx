@@ -420,14 +420,14 @@ export default function TopBar({ onMenuClick, onProfileClick }: { onMenuClick?: 
 
 
         {isLoggedIn ? (
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={onProfileClick}>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={onProfileClick}>
             <div className="hidden md:flex flex-col items-end">
-              <span className="text-sm font-semibold text-text-primary group-hover:text-[#a3e635] transition-colors leading-tight">{userName}</span>
+              <span className="text-sm font-semibold text-text-primary leading-tight">{userName}</span>
               <span className="text-[10px] text-text-tertiary flex items-center gap-1 font-medium mt-0.5">
                 <Flame className="w-3 h-3 text-[#ff5e00]" /> {streakDays} ngày liên tiếp
               </span>
             </div>
-            <div className="w-9 h-9 rounded-full bg-[#a3e635] flex items-center justify-center text-black font-bold text-sm shadow-lg shadow-[#a3e635]/20 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-full bg-[#a3e635] flex items-center justify-center text-black font-bold text-sm shadow-lg shadow-[#a3e635]/20 transition-transform">
               {userInitial}
             </div>
           </div>

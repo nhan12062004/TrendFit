@@ -154,7 +154,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <div className="p-8">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-text-primary mb-2">
-              {isLogin ? 'Chào mừng trở lại' : 'Tham gia TrendFit'}
+              {isLogin ? 'Chào mừng trở lại' : 'Tham gia TrendFit AI'}
             </h2>
             <p className="text-sm text-text-secondary">
               {isLogin ? 'Đăng nhập vào tài khoản của bạn' : 'Tạo hồ sơ thể hình của bạn ngay hôm nay'}
