@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import {
   User,
   Ruler,
-  Target,
-  Activity,
   Apple,
+  Stethoscope,
+  Heart,
   Droplet,
   CheckCircle2,
   Loader2,
   Sparkles,
   Zap,
   Clock,
-  Heart,
-  Stethoscope,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,11 +25,128 @@ interface SurveyFormProps {
   onClose?: () => void;
 }
 
+const TOTAL_STEPS = 6;
+/** Nhãn ngắn trên thanh bước (theo mockup) */
+const STEP_NAV_LABELS = [
+  'Thông tin cá nhân',
+  'Chỉ số cơ thể',
+  'Chế độ dinh dưỡng',
+  'Tình trạng sức khỏe',
+  'Thói quen vận động',
+  'Xác nhận & hoàn tất'
+];
+
+type StepIcon = React.ComponentType<{ className?: string }>;
+
+interface StepSurveyCardProps {
+  icon: StepIcon;
+  iconWrapClass: string;
+  iconClass: string;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}
+
+function StepSurveyCard({ icon: Icon, iconWrapClass, iconClass, title, subtitle, children }: StepSurveyCardProps) {
+  return (
+    <section className="space-y-5">
+      <div className="rounded-2xl border border-border-primary bg-bg-tertiary/30 p-4 md:p-5 space-y-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${iconWrapClass}`}>
+            <Icon className={iconClass} aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1 space-y-1">
+            <h3 className="text-base font-black uppercase tracking-tight text-text-primary md:text-lg">{title}</h3>
+            <p className="text-[11px] leading-relaxed text-text-secondary md:text-xs">{subtitle}</p>
+          </div>
+        </div>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+// Body fat reference data
+const BODY_FAT_REFS = {
+  Nam: [
+    { range: '3-4%', label: 'Cực kỳ săn nét', color: '#22d3ee', desc: 'Thi đấu thể hình, rất ít mỡ', emoji: 'trophy' },
+    { range: '5-7%', label: 'Săn nét vượt trội', color: '#a3e635', desc: 'Cơ bắp nổi cuồn cuộn, mạch máu rõ', emoji: 'muscle' },
+    { range: '8-10%', label: 'Săn chắc', color: '#facc15', desc: 'Thấy rõ 6 múi, rất fit', emoji: 'check' },
+    { range: '14-15%', label: 'Thể hình cân đối', color: '#fb923c', desc: 'Dáng chuẩn, hơi thấy cơ bụng', emoji: 'star' },
+    { range: '20-22%', label: 'Mỡ vừa phải', color: '#f97316', desc: 'Vóc dáng bình thường', emoji: 'warn' },
+    { range: '30-32%', label: 'Mỡ nhiều', color: '#ef4444', desc: 'Thừa cân, cần giảm mỡ', emoji: 'alert' },
+  ],
+  Nu: [
+    { range: '10-12%', label: 'Cực kỳ săn nét', color: '#22d3ee', desc: 'Thi đấu thể hình, rất ít mỡ', emoji: 'trophy' },
+    { range: '15-17%', label: 'Săn nét vượt trội', color: '#a3e635', desc: 'Cơ bắp lộ rõ, vóc dáng athletic', emoji: 'muscle' },
+    { range: '20-22%', label: 'Săn chắc', color: '#facc15', desc: 'Dáng chuẩn fitness, eo thon', emoji: 'check' },
+    { range: '25-27%', label: 'Thể hình cân đối', color: '#fb923c', desc: 'Vóc dáng bình thường, khỏe mạnh', emoji: 'star' },
+    { range: '30-32%', label: 'Mỡ vừa phải', color: '#f97316', desc: 'Hơi đầy đặn', emoji: 'warn' },
+    { range: '40-42%', label: 'Mỡ nhiều', color: '#ef4444', desc: 'Thừa cân, cần giảm mỡ', emoji: 'alert' },
+  ],
+};
+const MID_VALUES: Record<string, string> = {
+  "3-4%": "3.5", "5-7%": "6", "8-10%": "9", "14-15%": "14.5", "20-22%": "21", "30-32%": "31",
+  "10-12%": "11", "15-17%": "16", "25-27%": "26", "40-42%": "41"
+};
+function BodyFatRefButton({ gender, onSelect }: { gender: string; onSelect: (val: string) => void }) {
+  const [open, setOpen] = React.useState(false);
+  const refs = gender === "Nam" ? BODY_FAT_REFS.Nam : BODY_FAT_REFS.Nu;
+  const EMOJIS: Record<string, string> = { trophy: "🏆", muscle: "💪", check: "✅", star: "✨", warn: "⚠️", alert: "🚨" };
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className="w-full text-[9px] text-blue-400/70 hover:text-blue-400 text-center transition-all underline underline-offset-2">
+        Ảnh minh họa
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+          <div className="relative bg-bg-secondary border border-border-primary rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between">
+              <div>
+                <h4 className="text-base font-black text-text-primary">📊 Ước tính % Mỡ cơ thể</h4>
+                <p className="text-[10px] text-text-tertiary mt-0.5">Chọn mức gần nhất với vóc dáng ({gender})</p>
+              </div>
+              <button onClick={() => setOpen(false)} className="text-text-tertiary hover:text-white p-1"><X className="w-5 h-5" /></button>
+            </div>
+            <img
+              src={
+                gender === 'Nam'
+                  ? 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/body_fat_reference/body_fat_male.png'
+                  : 'https://wpkbzssdipqtbmthvgvx.supabase.co/storage/v1/object/public/media-assets/body_fat_reference/body_fat_female.png'
+              }
+              alt={`Body fat reference ${gender}`}
+              className="w-full rounded-2xl border border-border-primary object-cover"
+            />
+            <div className="grid grid-cols-1 gap-2">
+              {refs.map(ref => (
+                <button key={ref.range} type="button" onClick={() => { onSelect(MID_VALUES[ref.range] || "20"); setOpen(false); }} className="flex items-center gap-3 w-full p-3 rounded-xl border border-border-primary hover:border-blue-400/60 bg-bg-tertiary/50 hover:bg-bg-tertiary transition-all text-left group">
+                  <span className="text-xl">{EMOJIS[ref.emoji] || ref.emoji}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-black" style={{ color: ref.color }}>{ref.range}</span>
+                      <span className="text-xs font-bold text-text-primary">{ref.label}</span>
+                    </div>
+                    <p className="text-[10px] text-text-tertiary">{ref.desc}</p>
+                  </div>
+                  <span className="text-[10px] text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold">Chọn →</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+
 export default function SurveyForm({ onComplete, isOpen, onClose }: SurveyFormProps) {
   const { user, refreshProfile } = useAuth();
-const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isPreloading, setIsPreloading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
   // ... rest of state stays same for now as they are values sent to DB
   const [formData, setFormData] = useState({
     // Section 1: Thông tin cá nhân
@@ -45,6 +162,7 @@ const [loading, setLoading] = useState(false);
     weight: '',
     target_weight: '',
     body_fat: '',
+    neck: '',
     chest: '',
     waist: '',
     hips: '',
@@ -84,10 +202,29 @@ const [loading, setLoading] = useState(false);
     ? (() => {
       const h = parseFloat(formData.height);
       const w = parseFloat(formData.weight);
-      if (!h || !w || h <= 0 || w <= 0) return '0';
+      if (!h || !w || h <= 0 || w <= 0) return '';
       return (w / ((h / 100) ** 2)).toFixed(1);
     })()
-    : '0';
+    : '';
+
+  // US Navy Body Fat Method
+  const computedBodyFat = (() => {
+    const h = parseFloat(formData.height);
+    const neck = parseFloat(formData.neck);
+    const waist = parseFloat(formData.waist);
+    const hips = parseFloat(formData.hips);
+    if (!h || !neck || !waist || h <= 0 || neck <= 0 || waist <= 0) return null;
+    if (formData.gender === 'Nam') {
+      if (waist <= neck) return null;
+      const bf = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(h) + 36.76;
+      return Math.max(0, Math.min(60, bf)).toFixed(1);
+    } else {
+      if (!hips || hips <= 0) return null;
+      if ((waist + hips) <= neck) return null;
+      const bf = 163.205 * Math.log10(waist + hips - neck) - 97.684 * Math.log10(h) - 78.387;
+      return Math.max(0, Math.min(60, bf)).toFixed(1);
+    }
+  })();
 
   React.useEffect(() => {
     async function loadCurrentData() {
@@ -113,9 +250,10 @@ const [loading, setLoading] = useState(false);
             weight: b.data?.weight?.toString() || prev.weight,
             target_weight: b.data?.target_weight?.toString() || prev.target_weight,
             body_fat: b.data?.body_fat?.toString() || prev.body_fat,
-            chest: b.data?.chest?.toString() || prev.chest,
-            waist: b.data?.waist?.toString() || prev.waist,
-            hips: b.data?.hips?.toString() || prev.hips,
+            neck: (b.data?.neck && b.data.neck !== 0) ? b.data.neck.toString() : '',
+            chest: (b.data?.chest && b.data.chest !== 0) ? b.data.chest.toString() : '',
+            waist: (b.data?.waist && b.data.waist !== 0) ? b.data.waist.toString() : '',
+            hips: (b.data?.hips && b.data.hips !== 0) ? b.data.hips.toString() : '',
             activity_level: l.data?.activity_level || prev.activity_level,
             fitness_goal: l.data?.fitness_goal || prev.fitness_goal,
             diet_preference: l.data?.diet_preference || prev.diet_preference,
@@ -147,6 +285,54 @@ const [loading, setLoading] = useState(false);
     loadCurrentData();
   }, [user, isOpen]);
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setCurrentStep(1);
+      setIsSubmitted(false);
+    }
+  }, [isOpen]);
+
+  const getFirstInvalidStep = (): number | null => {
+    if (!formData.full_name || !formData.phone || !formData.birthday || !formData.gender) return 1;
+    if (
+      !formData.height ||
+      formData.height === '0' ||
+      !formData.weight ||
+      formData.weight === '0' ||
+      !formData.target_weight ||
+      formData.target_weight === '0'
+    ) {
+      return 2;
+    }
+    return null;
+  };
+
+  const goNext = () => {
+    setIsSubmitted(true);
+    if (currentStep === 1) {
+      if (!formData.full_name || !formData.phone || !formData.birthday || !formData.gender) return;
+    }
+    if (currentStep === 2) {
+      if (
+        !formData.height ||
+        formData.height === '0' ||
+        !formData.weight ||
+        formData.weight === '0' ||
+        !formData.target_weight ||
+        formData.target_weight === '0'
+      ) {
+        return;
+      }
+    }
+    setIsSubmitted(false);
+    if (currentStep < TOTAL_STEPS) setCurrentStep(s => s + 1);
+  };
+
+  const goPrev = () => {
+    setIsSubmitted(false);
+    setCurrentStep(s => Math.max(1, s - 1));
+  };
+
   if (isPreloading || loading) {
     return (
       <div className="fixed inset-0 z-[70]">
@@ -163,8 +349,14 @@ const [loading, setLoading] = useState(false);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (currentStep < TOTAL_STEPS) {
+      goNext();
+      return;
+    }
     setIsSubmitted(true);
-    if (!formData.full_name || !formData.phone || !formData.birthday || !formData.gender || !formData.height || formData.height === '0' || !formData.weight || formData.weight === '0' || !formData.target_weight || formData.target_weight === '0') {
+    const invalidStep = getFirstInvalidStep();
+    if (invalidStep !== null) {
+      setCurrentStep(invalidStep);
       return;
     }
     setLoading(true);
@@ -192,7 +384,8 @@ const [loading, setLoading] = useState(false);
           height: parseFloat(formData.height) || 0,
           weight: parseFloat(formData.weight) || 0,
           target_weight: parseFloat(formData.target_weight) || 0,
-          body_fat: formData.body_fat ? parseFloat(formData.body_fat) : null,
+          body_fat: computedBodyFat ? parseFloat(computedBodyFat) : (formData.body_fat ? parseFloat(formData.body_fat) : null),
+          neck: formData.neck ? parseFloat(formData.neck) : null,
           chest: formData.chest ? parseFloat(formData.chest) : null,
           waist: formData.waist ? parseFloat(formData.waist) : null,
           hips: formData.hips ? parseFloat(formData.hips) : null
@@ -279,39 +472,89 @@ const [loading, setLoading] = useState(false);
       {/* Modal Content */}
       <div className="relative w-full max-w-4xl bg-bg-secondary border border-border-primary rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in duration-300">
 
-        {/* Header */}
-        <div className="p-4 md:p-5 border-b border-border-primary bg-bg-tertiary/50 backdrop-blur-xl relative">
-          <div className="flex items-center gap-2 mb-0.5">
-            <Sparkles className="w-4 h-4 text-[#a3e635] animate-pulse" />
-            <span className="text-[9px] font-bold text-[#a3e635] uppercase tracking-[3px]">{"Hệ thống phân tích AI"}</span>
-          </div>
-          <h2 className="text-xl md:text-2xl font-black text-text-primary">{isOpen ? "Chỉnh sửa hồ sơ sức khỏe" : "Xây dựng hồ sơ sức khỏe toàn diện"}</h2>
-          <p className="text-[11px] text-text-secondary">{"Thông tin càng chi tiết, AI sẽ tạo kế hoạch tập luyện và thực đơn"} <span className="text-[#a3e635] font-bold italic">{"chính xác tuyệt đối"}</span> {"cho bạn."}</p>
+        {/* Close Button (Only for Profile Editing) */}
+        {isOpen && onClose && (
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 z-[70] p-2 hover:bg-white/10 rounded-xl transition-all text-text-tertiary hover:text-white group bg-bg-tertiary/50 backdrop-blur-md"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        )}
 
-          {/* Close Button (Only for Profile Editing) */}
-          {isOpen && onClose && (
-            <button
-              onClick={onClose}
-              className="absolute right-6 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 rounded-xl transition-all text-text-tertiary hover:text-white group"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          )}
+        {/* Header */}
+        {currentStep === 1 && (
+          <div className="px-4 pt-6 pb-0 md:px-8 md:pt-7 md:pb-0 relative z-10">
+            <h2 className="text-2xl md:text-3xl font-black text-text-primary leading-tight pr-12">
+              {isOpen ? "Chỉnh sửa hồ sơ sức khỏe 👋" : "Chào mừng đến với TrendFit AI 👋"}
+            </h2>
+            <p className="text-sm md:text-base text-text-secondary mt-2 pr-12">
+              {isOpen 
+                ? "Cập nhật thông tin của bạn để AI có thể điều chỉnh kế hoạch tập luyện và thực đơn phù hợp hơn." 
+                : "Tôi sẽ hỏi bạn vài thông tin để tạo kế hoạch tập luyện và thực đơn cá nhân hóa."}
+            </p>
+          </div>
+        )}
+
+        {/* Step progress — vòng tròn + đường nối */}
+        <div className="px-4 pt-4 pb-2 md:px-8 md:pt-5 md:pb-2 bg-bg-secondary/80">
+          <div className="rounded-2xl border border-border-primary bg-bg-tertiary/30 px-3 py-4 md:px-5 md:py-5">
+            <div className="-mx-1 overflow-x-auto pb-1 md:mx-0 md:overflow-visible">
+            <div className="flex w-full min-w-[520px] md:min-w-0">
+              {STEP_NAV_LABELS.map((label, idx) => {
+                const n = idx + 1;
+                const active = n === currentStep;
+                return (
+                  <div key={n} className="flex min-w-0 flex-1 flex-col items-stretch">
+                    <div className="flex items-center">
+                      {idx > 0 ? (
+                        <div
+                          className={`h-0.5 flex-1 rounded-full transition-colors ${currentStep > idx ? 'bg-[#a3e635]/80' : 'bg-border-primary/50'}`}
+                          aria-hidden
+                        />
+                      ) : (
+                        <div className="flex-1" aria-hidden />
+                      )}
+                      <div
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black transition-colors md:h-9 md:w-9 md:text-sm ${active ? 'bg-[#a3e635] text-black shadow-[0_0_12px_rgba(163,230,53,0.35)]' : 'border border-border-primary bg-bg-secondary text-text-primary'}`}
+                        aria-current={active ? 'step' : undefined}
+                      >
+                        {n}
+                      </div>
+                      {idx < TOTAL_STEPS - 1 ? (
+                        <div
+                          className={`h-0.5 flex-1 rounded-full transition-colors ${currentStep > n ? 'bg-[#a3e635]/80' : 'bg-border-primary/50'}`}
+                          aria-hidden
+                        />
+                      ) : (
+                        <div className="flex-1" aria-hidden />
+                      )}
+                    </div>
+                    <p
+                      className={`mt-2 text-center text-[8px] font-bold leading-tight md:text-[10px] ${active ? 'text-[#a3e635]' : 'text-text-tertiary'}`}
+                    >
+                      {label}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            </div>
+          </div>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10 custom-scrollbar">
-          <div className="bg-red-500/10 border border-red-500/20 p-2 rounded-lg mb-4 text-center">
-             <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest">{"Lưu ý: Các trường có dấu * là bắt buộc phải điền"}</p>
-          </div>
-
+        <form id="survey-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 md:px-8 pt-2 pb-5 md:pt-3 md:pb-7 space-y-8 custom-scrollbar">
           {/* Section 1: Thông tin cá nhân */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3 border-l-4 border-[#a3e635] pl-4">
-              <User className="w-5 h-5 text-[#a3e635]" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{"1. Nhân khẩu học & Nghề nghiệp"}</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {currentStep === 1 && (
+          <StepSurveyCard
+            icon={User}
+            iconWrapClass="bg-[#a3e635]/15 ring-2 ring-[#a3e635]/40"
+            iconClass="h-6 w-6 text-[#a3e635]"
+            title={"1. Thông tin cá nhân"}
+            subtitle={"Thông tin cơ bản giúp AI hiểu rõ hơn về bạn."}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-5 md:gap-x-5 md:gap-y-5">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Họ và tên"} <span className="text-red-500">*</span></label>
                 <input required name="full_name" value={formData.full_name} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.full_name ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635]`} placeholder={"Nguyễn Văn A"} />
@@ -327,7 +570,7 @@ const [loading, setLoading] = useState(false);
                 {isSubmitted && !formData.phone && <p className="text-red-500 text-[10px] mt-1 font-medium">Vui lòng nhập số điện thoại</p>}
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-5 md:gap-x-5 md:gap-y-5">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Ngày sinh"} <span className="text-red-500">*</span></label>
                 <input required type="date" name="birthday" value={formData.birthday} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && !formData.birthday ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635]`} />
@@ -347,63 +590,119 @@ const [loading, setLoading] = useState(false);
                 <input name="job" value={formData.job} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-[#a3e635]" placeholder={"Vd: Văn phòng, Tự do..."} />
               </div>
             </div>
-          </section>
+            <div className="bg-red-500/5 border border-red-500/20 p-3 rounded-xl">
+              <p className="text-center text-[10px] font-bold uppercase tracking-widest text-red-400/95 leading-relaxed">
+                {"* Lưu ý: Các trường có dấu * là bắt buộc phải điền"}
+              </p>
+            </div>
+          </StepSurveyCard>
+          )}
 
           {/* Section 2: Chỉ số cơ thể nâng cao */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3 border-l-4 border-blue-400 pl-4">
-              <Ruler className="w-5 h-5 text-blue-400" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{"2. Chỉ số cơ thể & Thành phần mỡ"}</h3>
-            </div>
+          {currentStep === 2 && (
+          <StepSurveyCard
+            icon={Ruler}
+            iconWrapClass="bg-blue-400/15 ring-2 ring-blue-400/40"
+            iconClass="h-6 w-6 text-blue-400"
+            title={"2. Chỉ số cơ thể"}
+            subtitle={"Nhập chiều cao, cân nặng và số đo để AI tính BMI và gợi ý cường độ tập phù hợp."}
+          >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Chiều cao (cm)"} <span className="text-red-500">*</span></label>
-                <input required type="number" name="height" value={formData.height} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && (!formData.height || formData.height === '0') ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400`} placeholder="175" />
+                <input required type="number" name="height" value={formData.height} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && (!formData.height || formData.height === '0') ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400`} placeholder="0" />
                 {isSubmitted && (!formData.height || formData.height === '0') && <p className="text-red-500 text-[10px] mt-1 font-medium">Vui lòng nhập chiều cao</p>}
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Cân nặng (kg)"} <span className="text-red-500">*</span></label>
-                <input required type="number" name="weight" value={formData.weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && (!formData.weight || formData.weight === '0') ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400`} placeholder="70" />
+                <input required type="number" name="weight" value={formData.weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && (!formData.weight || formData.weight === '0') ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400`} placeholder="0" />
                 {isSubmitted && (!formData.weight || formData.weight === '0') && <p className="text-red-500 text-[10px] mt-1 font-medium">Vui lòng nhập cân nặng</p>}
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Cân nặng đích (kg)"} <span className="text-red-500">*</span></label>
-                <input required type="number" name="target_weight" value={formData.target_weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && (!formData.target_weight || formData.target_weight === '0') ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400`} placeholder="65" />
+                <input required type="number" name="target_weight" value={formData.target_weight} onChange={handleInputChange} className={`w-full bg-bg-tertiary border ${isSubmitted && (!formData.target_weight || formData.target_weight === '0') ? 'border-red-500 animate-pulse' : 'border-border-primary'} rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400`} placeholder="0" />
                 {isSubmitted && (!formData.target_weight || formData.target_weight === '0') && <p className="text-red-500 text-[10px] mt-1 font-medium">Vui lòng nhập cân nặng đích</p>}
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"% Mỡ cơ thể (nếu biết)"}</label>
-                <input type="number" name="body_fat" value={formData.body_fat} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-blue-400" placeholder="15" />
-              </div>
-            </div>
-            <div className="grid grid-cols-4 gap-4 bg-bg-tertiary/30 p-4 rounded-2xl border border-border-primary/50">
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">{"Vòng ngực"}</label>
-                <input type="number" name="chest" value={formData.chest} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">{"Vòng bụng"}</label>
-                <input type="number" name="waist" value={formData.waist} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-text-tertiary uppercase text-center block">{"Vòng mông"}</label>
-                <input type="number" name="hips" value={formData.hips} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400" />
-              </div>
-              <div className="space-y-1 flex flex-col justify-center items-center">
-                <label className="text-[9px] font-bold text-[#a3e635] uppercase text-center block">{"Chỉ số BMI"}</label>
-                <div className="w-full bg-[#a3e635]/10 border border-[#a3e635]/30 rounded-lg py-1.5 px-2 text-center text-xs font-bold text-[#a3e635]">
+              <div className="space-y-1.5 flex flex-col justify-center items-center">
+                <label className="text-[10px] font-bold text-[#a3e635] uppercase text-center block">{"Chỉ số BMI"}</label>
+                <div className="w-full bg-[#a3e635]/10 border border-[#a3e635]/30 rounded-lg py-1.5 px-2 text-center text-sm font-black text-[#a3e635] min-h-[32px] flex items-center justify-center">
                   {BMI}
                 </div>
               </div>
             </div>
-          </section>
+            {/* Hàng 2: Số đo vòng — hiển thị theo giới tính */}
+            <div className="grid grid-cols-4 gap-4 bg-bg-tertiary/30 p-4 rounded-2xl border border-border-primary/50">
+              {/* Vòng cổ — cả hai giới */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase text-center block">Vòng cổ (cm)</label>
+                <input type="number" name="neck" value={formData.neck} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400" placeholder="0" />
+              </div>
+
+              {/* Vòng bụng — cả hai giới */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase text-center block">Vòng bụng (cm)</label>
+                <input type="number" name="waist" value={formData.waist} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400" placeholder="0" />
+              </div>
+
+              {/* Nam: Vòng ngực / Nữ: Vòng mông */}
+              {formData.gender === 'Nam' ? (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase text-center block">Vòng ngực (cm)</label>
+                  <input type="number" name="chest" value={formData.chest} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400" placeholder="0" />
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase text-center block">Vòng mông (cm)</label>
+                  <input type="number" name="hips" value={formData.hips} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400" placeholder="0" />
+                </div>
+              )}
+
+              {/* % Mỡ cơ thể — hiển thị kết quả tính hoặc nhập tay */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase text-center block">% Mỡ cơ thể</label>
+                {computedBodyFat ? (
+                  <div className="relative">
+                    <div className="w-full bg-blue-400/10 border border-blue-400/40 rounded-lg py-1.5 px-2 text-center text-sm font-black text-blue-400 min-h-[28px] flex items-center justify-center">
+                      {computedBodyFat}%
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, body_fat: computedBodyFat ?? '' }))}
+                      className="mt-1 w-full text-[8px] text-blue-400/70 hover:text-blue-400 text-center transition-all"
+                    >
+                      ↧ Lưu vào hồ sơ
+                    </button>
+                  </div>
+                ) : (
+                  <input
+                    type="number"
+                    name="body_fat"
+                    value={formData.body_fat}
+                    onChange={handleInputChange}
+                    className="w-full bg-bg-tertiary border border-border-primary rounded-lg py-1.5 px-2 text-center text-xs outline-none focus:border-blue-400"
+                    placeholder="0"
+                  />
+                )}
+                <BodyFatRefButton gender={formData.gender} onSelect={(val) => setFormData(prev => ({ ...prev, body_fat: val }))} />
+              </div>
+            </div>
+            <div className="bg-red-500/5 border border-red-500/20 p-3 rounded-xl">
+              <p className="text-center text-[10px] font-bold uppercase tracking-widest text-red-400/95 leading-relaxed">
+                {"* Lưu ý: Các trường có dấu * là bắt buộc phải điền"}
+              </p>
+            </div>
+          </StepSurveyCard>
+          )}
 
           {/* Section 3: Dinh dưỡng */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3 border-l-4 border-emerald-500 pl-4">
-              <Apple className="w-5 h-5 text-emerald-500" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{"3. Chế độ dinh dưỡng & Ăn uống"}</h3>
-            </div>
+          {currentStep === 3 && (
+          <StepSurveyCard
+            icon={Apple}
+            iconWrapClass="bg-emerald-500/15 ring-2 ring-emerald-500/40"
+            iconClass="h-6 w-6 text-emerald-500"
+            title={"3. Chế độ dinh dưỡng"}
+            subtitle={"Thói quen ăn uống giúp AI xây thực đơn phù hợp ngân sách và sở thích của bạn."}
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Chế độ ăn & Sở thích"}</label>
@@ -462,14 +761,18 @@ const [loading, setLoading] = useState(false);
                 <input name="allergies" value={formData.allergies} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-2 px-3 text-sm outline-none focus:border-emerald-500" placeholder={"Vd: Hải sản, Sữa bò (Lactose), Đậu phộng..."} />
               </div>
             </div>
-          </section>
+          </StepSurveyCard>
+          )}
 
           {/* Section 4: Tình trạng y tế */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3 border-l-4 border-red-500 pl-4">
-              <Stethoscope className="w-5 h-5 text-red-500" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{"4. Tình trạng sức khỏe & Y tế"}</h3>
-            </div>
+          {currentStep === 4 && (
+          <StepSurveyCard
+            icon={Stethoscope}
+            iconWrapClass="bg-red-500/15 ring-2 ring-red-500/40"
+            iconClass="h-6 w-6 text-red-500"
+            title={"4. Tình trạng sức khỏe"}
+            subtitle={"Thông tin y tế giúp AI điều chỉnh bài tập an toàn với tình trạng của bạn."}
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Khói thuốc & Rượu bia"}</label>
@@ -501,14 +804,18 @@ const [loading, setLoading] = useState(false);
                 {"* Lưu ý: Nếu bạn có bệnh nền nặng, hãy tham khảo ý kiến bác sĩ trước khi bắt đầu bất kỳ lộ trình tập luyện cường độ cao nào. AI sẽ dựa trên thông tin này để giới hạn nhịp tim và áp lực lên khớp."}
               </p>
             </div>
-          </section>
+          </StepSurveyCard>
+          )}
 
-          {/* Section 5: Kinh nghiệm & Thói quen vận động */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3 border-l-4 border-orange-500 pl-4">
-              <Zap className="w-5 h-5 text-orange-500" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{"5. Kinh nghiệm & Thói quen vận động"}</h3>
-            </div>
+          {/* Section 5: Tập luyện & giấc ngủ */}
+          {currentStep === 5 && (
+          <StepSurveyCard
+            icon={Zap}
+            iconWrapClass="bg-orange-500/15 ring-2 ring-orange-500/40"
+            iconClass="h-6 w-6 text-orange-500"
+            title={"5. Thói quen vận động"}
+            subtitle={"Mô tả công việc, tập luyện và giấc ngủ để AI cân bằng tải tập và phục hồi."}
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Tính chất công việc"}</label>
@@ -588,14 +895,19 @@ const [loading, setLoading] = useState(false);
                 {"Giấc ngủ ảnh hưởng 80% quá trình phục hồi. AI sẽ cân đối bài tập dựa trên khả năng hồi phục của bạn."}
               </p>
             </div>
-          </section>
+          </StepSurveyCard>
+          )}
 
-          {/* Section 6: Tâm lý & Động lực AI */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3 border-l-4 border-purple-500 pl-4">
-              <Heart className="w-5 h-5 text-purple-500" />
-              <h3 className="text-lg font-bold text-text-primary uppercase tracking-tight">{"6. Tâm lý & Động lực AI"}</h3>
-            </div>
+          {/* Section 6: Tâm lý & động lực + xác nhận */}
+          {currentStep === 6 && (
+          <StepSurveyCard
+            icon={Heart}
+            iconWrapClass="bg-purple-500/15 ring-2 ring-purple-500/40"
+            iconClass="h-6 w-6 text-purple-400"
+            title={"6. Xác nhận & hoàn tất"}
+            subtitle={"Chia sẻ tâm lý và mong muốn, sau đó xác nhận để gửi hồ sơ tới TrendFit AI."}
+          >
+            <div className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Mức độ Stress hàng ngày"}</label>
@@ -614,7 +926,6 @@ const [loading, setLoading] = useState(false);
               <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{"Thông điệp gửi AI (Yêu cầu riêng biệt)"}</label>
               <textarea name="expectations" value={formData.expectations} onChange={handleInputChange} className="w-full bg-bg-tertiary border border-border-primary rounded-xl py-3 px-4 h-20 text-sm outline-none focus:border-purple-500" placeholder={"Tôi muốn tập trung vào phần mông, tôi không thích ăn rau cải..."} />
             </div>
-          </section>
 
           <div className="bg-[#a3e635]/5 border border-[#a3e635]/20 p-4 rounded-2xl flex gap-3">
             <CheckCircle2 className="w-5 h-5 text-[#a3e635] shrink-0" />
@@ -622,27 +933,61 @@ const [loading, setLoading] = useState(false);
               {"Xác nhận: Thông tin này sẽ được mã hóa và gửi tới TrendFit AI Engine. Dữ liệu này là cơ sở để chúng tôi cá nhân hóa 100% lộ trình của bạn."}
             </p>
           </div>
+            </div>
+          </StepSurveyCard>
+          )}
         </form>
 
         {/* Footer */}
-        <div className="p-4 md:p-5 border-t border-border-primary bg-bg-tertiary/50 backdrop-blur-xl flex justify-between items-center">
-          <div className="hidden sm:block">
-            <span className="text-[9px] font-bold text-text-tertiary uppercase tracking-[2px]">TrendFit AI Precision Onboarding</span>
+        <div className="px-4 py-4 md:px-6 md:py-5 border-t border-border-primary bg-bg-tertiary/50 backdrop-blur-xl flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-stretch sm:items-center">
+          <div className="flex flex-1 min-w-0 items-center order-2 sm:order-1 sm:pr-4">
+            <p className="text-sm font-black tracking-tight leading-snug">
+              <span className="text-text-secondary font-bold">
+                {"Thông tin càng chi tiết, AI sẽ tạo kế hoạch tập luyện và thực đơn "}
+              </span>
+              <span className="text-text-secondary font-bold">{"càng chính xác."}</span>
+            </p>
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="w-full sm:w-auto bg-[#a3e635] text-black font-black py-2.5 px-8 rounded-xl hover:bg-[#bef264] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 text-sm"
-          >
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                {isOpen ? "CẬP NHẬT HỒ SƠ" : "KÍCH HOẠT LỘ TRÌNH AI"}
-                <Zap className="w-4 h-4 text-black" />
-              </>
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto sm:ml-auto order-1 sm:order-2 shrink-0">
+            {currentStep > 1 && (
+              <button
+                type="button"
+                onClick={goPrev}
+                disabled={loading}
+                className="w-full sm:w-auto py-2.5 px-5 rounded-xl border border-border-primary text-text-primary font-bold text-sm hover:bg-white/5 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Quay lại
+              </button>
             )}
-          </button>
+            {currentStep < TOTAL_STEPS ? (
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={loading}
+                className="w-full sm:w-auto bg-[#a3e635] text-black font-black py-2.5 px-8 rounded-xl hover:bg-[#bef264] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 text-sm"
+              >
+                Tiếp theo
+                <ChevronRight className="w-4 h-4 text-black" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                form="survey-form"
+                disabled={loading}
+                className="w-full sm:w-auto bg-[#a3e635] text-black font-black py-2.5 px-8 rounded-xl hover:bg-[#bef264] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 text-sm"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    {isOpen ? "CẬP NHẬT HỒ SƠ" : "KÍCH HOẠT LỘ TRÌNH AI"}
+                    <Zap className="w-4 h-4 text-black" />
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
